@@ -7,7 +7,6 @@
 
 #include <memory>
 
-#include "flutter/shell/platform/glfw/public/flutter_glfw.h"
 
 namespace flutter {
 namespace testing {

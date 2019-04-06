@@ -73,3 +73,9 @@ shared_library("flutter_windows") {
 
   public_configs = [ "$flutter_root:config" ]
 }
+
+group("windows") {
+  deps = [
+    ":flutter_windows",
+  ]
+}
