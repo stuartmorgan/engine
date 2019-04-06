@@ -32,7 +32,7 @@ source_set("flutter_windows_headers") {
   ]
 }
 
-source_set("flutter_windows") {
+source_set("flutter_windows_source") {
   sources = [
     "flutter_windows.cc",
   ]
@@ -47,7 +47,7 @@ source_set("flutter_windows") {
     "$flutter_root/shell/platform/common/cpp/client_wrapper:client_wrapper",
     "$flutter_root/shell/platform/embedder:embedder",
     "$flutter_root/shell/platform/windows/client_wrapper:client_wrapper_windows",
-    "//third_party/jsoncpp",
+    #"//third_party/jsoncpp",
   ]
 }
 
@@ -65,7 +65,7 @@ copy("publish_headers_windows") {
 
 shared_library("flutter_windows") {
   deps = [
-    ":flutter_windows",
+    ":flutter_windows_source",
     "$flutter_root/shell/platform/common/cpp/client_wrapper:publish_wrapper",
     ":publish_headers_windows",
     "$flutter_root/shell/platform/windows/client_wrapper:publish_wrapper_windows",
