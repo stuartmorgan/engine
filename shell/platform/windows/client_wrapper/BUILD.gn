@@ -17,7 +17,7 @@ config("relative_core_wrapper_headers") {
   ]
 }
 
-# GLFW client wrapper build for internal use by the shell implementation.
+# Windows client wrapper build for internal use by the shell implementation.
 source_set("client_wrapper_windows") {
   sources = _wrapper_sources
   public = _wrapper_includes
@@ -35,7 +35,7 @@ source_set("client_wrapper_windows") {
   public_configs = [
     ":relative_core_wrapper_headers",
     "$flutter_root/shell/platform/common/cpp:relative_flutter_library_headers",
-    "$flutter_root/shell/platform/glfw:relative_flutter_glfw_headers",
+    "$flutter_root/shell/platform/windows:relative_flutter_windows_headers",
   ]
 }
 
