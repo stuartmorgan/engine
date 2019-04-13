@@ -9,6 +9,7 @@
 #include <chrono>
 #include <cstdlib>
 #include <iostream>
+#include <vector>
 
 #include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/plugin_registrar.h"
 #include "flutter/shell/platform/common/cpp/incoming_message_dispatcher.h"
@@ -51,9 +52,9 @@ struct FlutterDesktopWindowState {
   // The plugin registrar managing internal plugins.
   std::unique_ptr<flutter::PluginRegistrar> internal_plugin_registrar;
 
-  // Handlers for keyboard events from GLFW.
-  std::vector<std::unique_ptr<shell::KeyboardHookHandler>>
-      keyboard_hook_handlers;
+  //// Handlers for keyboard events from GLFW.
+  //std::vector<std::unique_ptr<shell::KeyboardHookHandler>>
+  //    keyboard_hook_handlers;
 
   // Whether or not to track mouse movements to send kHover events.
   bool hover_tracking_enabled = false;
@@ -307,10 +308,10 @@ static void GLFWKeyCallback(void* window,
                             int scancode,
                             int action,
                             int mods) {
-  for (const auto& handler :
+  /*for (const auto& handler :
        GetSavedWindowState(window)->keyboard_hook_handlers) {
     handler->KeyboardHook(window, key, scancode, action, mods);
-  }
+  }*/
 }
 
 // Enables/disables the callbacks related to mouse tracking.
@@ -478,6 +479,7 @@ bool FlutterDesktopInit() {
   //// Before making any GLFW calls, set up a logging error handler.
   //glfwSetErrorCallback(GLFWErrorCallback);
   //return glfwInit();
+  return false;
 }
 
 void FlutterDesktopTerminate() {
@@ -549,6 +551,7 @@ FlutterDesktopWindowRef FlutterDesktopCreateWindow(int initial_width,
 //  GLFWAssignEventCallbacks(window);
 //
 //  return state;
+  return nullptr;
 }
 
 void FlutterDesktopSetHoverEnabled(FlutterDesktopWindowRef flutter_window,
