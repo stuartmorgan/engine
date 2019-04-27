@@ -384,6 +384,10 @@ deps = {
    'src/third_party/vulkan':
    Var('github_git') + '/KhronosGroup/Vulkan-Docs.git' + '@' + 'v1.1.91',
 
+   # Headers for Angle
+   'src/third_party/angle':
+   Var('github_git') + '/google/angle.git' + '@' + 'c467f7b5418856515b9f321495def98ee8ad0554',
+
   'src/third_party/pkg/when':
    Var('dart_git') + '/when.git' + '@' + '0.2.0',
 

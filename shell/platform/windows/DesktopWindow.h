@@ -1,13 +1,9 @@
 #pragma once
-#include "pch.h"
 
-extern "C" IMAGE_DOS_HEADER __ImageBase;
-
-using namespace winrt;
-using namespace Windows::UI;
-using namespace Windows::UI::Composition;
-using namespace Windows::UI::Composition::Desktop;
-using namespace Windows::Foundation::Numerics;
+//extern "C" IMAGE_DOS_HEADER __ImageBase;
+#define WINVER 0x0605
+#include <ShellScalingApi.h>
+#include <Windows.h>
 
 template <typename T>
 struct DesktopWindow {
@@ -18,18 +14,18 @@ struct DesktopWindow {
   static LRESULT __stdcall WndProc(HWND const window, UINT const message,
                                    WPARAM const wparam,
                                    LPARAM const lparam) noexcept {
-    WINRT_ASSERT(window);
+    //WINRT_ASSERT(window);
 
     if (WM_NCCREATE == message) {
       auto cs = reinterpret_cast<CREATESTRUCT *>(lparam);
       T *that = static_cast<T *>(cs->lpCreateParams);
-      WINRT_ASSERT(that);
-      WINRT_ASSERT(!that->mWindow);
+      //WINRT_ASSERT(that);
+      //WINRT_ASSERT(!that->mWindow);
       that->mWindow = window;
       SetWindowLongPtr(window, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(that));
 
 	  EnableNonClientDpiScaling(window);
-      mCurrentDpi = GetDpiForWindow(window);
+      //mCurrentDpi = GetDpiForWindow(window);
     } else if (T *that = GetThisFromHandle(window)) {
       return that->MessageHandler(message, wparam, lparam);
     }
@@ -89,7 +85,7 @@ struct DesktopWindow {
 
   void DoResize(UINT width, UINT height) {}
 
-  auto CreateDispatcherQueueController() {
+ /* auto CreateDispatcherQueueController() {
     namespace abi = ABI::Windows::System;
 
     DispatcherQueueOptions options{sizeof(DispatcherQueueOptions),
@@ -112,13 +108,14 @@ struct DesktopWindow {
         window, true,
         reinterpret_cast<abi::IDesktopWindowTarget **>(put_abi(target))));
     return target;
-  }
+  }*/
 
  protected:
-  inline static UINT mCurrentDpi = 0;
+  int mCurrentDpi = 0;
   int mCurrentWidth = 0;
   int mCurrentHeight = 0;
   using base_type = DesktopWindow<T>;
   HWND mWindow = nullptr;
 };
+
 #pragma once

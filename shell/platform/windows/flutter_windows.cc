@@ -11,6 +11,7 @@
 #include <iostream>
 #include <vector>
 
+#include "flutter/shell/platform/windows/FlutterWindow.h"
 #include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/plugin_registrar.h"
 #include "flutter/shell/platform/common/cpp/incoming_message_dispatcher.h"
 #include "flutter/shell/platform/embedder/embedder.h"
@@ -479,7 +480,7 @@ bool FlutterDesktopInit() {
   //// Before making any GLFW calls, set up a logging error handler.
   //glfwSetErrorCallback(GLFWErrorCallback);
   //return glfwInit();
-  return false;
+  return true;
 }
 
 void FlutterDesktopTerminate() {
@@ -493,7 +494,11 @@ FlutterDesktopWindowRef FlutterDesktopCreateWindow(int initial_width,
                                                    const char* icu_data_path,
                                                    const char** arguments,
                                                    size_t argument_count) {
-//#ifdef __linux__
+
+    std::shared_ptr<FlutterWindow> window = std::make_shared<FlutterWindow>();
+  window->FlutterMessageLoop();
+	
+	//#ifdef __linux__
 //  gtk_init(0, nullptr);
 //#endif
 //  // Create the window.

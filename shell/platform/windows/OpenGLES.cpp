@@ -1,9 +1,6 @@
-#include "pch.h"
 #include "OpenGLES.h"
 
-using namespace winrt;
-using namespace Windows::Foundation;
-using namespace Windows::Foundation::Collections;
+
 
 OpenGLES::OpenGLES() :
 	mEglConfig(nullptr),
@@ -76,7 +73,7 @@ void OpenGLES::Initialize()
 	PFNEGLGETPLATFORMDISPLAYEXTPROC eglGetPlatformDisplayEXT = reinterpret_cast<PFNEGLGETPLATFORMDISPLAYEXTPROC>(eglGetProcAddress("eglGetPlatformDisplayEXT"));
 	if (!eglGetPlatformDisplayEXT)
 	{
-		throw winrt::hresult_error(E_FAIL, L"Failed to get function eglGetPlatformDisplayEXT");
+		//throw winrt::hresult_error(E_FAIL, L"Failed to get function eglGetPlatformDisplayEXT");
 	}
 
 	//
@@ -93,8 +90,7 @@ void OpenGLES::Initialize()
 	mEglDisplay = eglGetPlatformDisplayEXT(EGL_PLATFORM_ANGLE_ANGLE, EGL_DEFAULT_DISPLAY, defaultDisplayAttributes);
 	if (mEglDisplay == EGL_NO_DISPLAY)
 	{
-
-		throw winrt::hresult_error(E_FAIL, L"Failed to get EGL display");
+		//throw winrt::hresult_error(E_FAIL, L"Failed to get EGL display");
 	}
 
 	if (eglInitialize(mEglDisplay, NULL, NULL) == EGL_FALSE)
@@ -103,7 +99,7 @@ void OpenGLES::Initialize()
 		mEglDisplay = eglGetPlatformDisplayEXT(EGL_PLATFORM_ANGLE_ANGLE, EGL_DEFAULT_DISPLAY, fl9_3DisplayAttributes);
 		if (mEglDisplay == EGL_NO_DISPLAY)
 		{
-			throw winrt::hresult_error(E_FAIL, L"Failed to get EGL display");
+			//throw winrt::hresult_error(E_FAIL, L"Failed to get EGL display");
 		}
 
 		if (eglInitialize(mEglDisplay, NULL, NULL) == EGL_FALSE)
@@ -112,13 +108,13 @@ void OpenGLES::Initialize()
 			mEglDisplay = eglGetPlatformDisplayEXT(EGL_PLATFORM_ANGLE_ANGLE, EGL_DEFAULT_DISPLAY, warpDisplayAttributes);
 			if (mEglDisplay == EGL_NO_DISPLAY)
 			{
-				throw winrt::hresult_error(E_FAIL, L"Failed to get EGL display");
+				//throw winrt::hresult_error(E_FAIL, L"Failed to get EGL display");
 			}
 
 			if (eglInitialize(mEglDisplay, NULL, NULL) == EGL_FALSE)
 			{
 				// If all of the calls to eglInitialize returned EGL_FALSE then an error has occurred.
-				throw winrt::hresult_error(E_FAIL, L"Failed to initialize EGL");
+				//throw winrt::hresult_error(E_FAIL, L"Failed to initialize EGL");
 			}
 		}
 	}
@@ -126,13 +122,13 @@ void OpenGLES::Initialize()
 	EGLint numConfigs = 0;
 	if ((eglChooseConfig(mEglDisplay, configAttributes, &mEglConfig, 1, &numConfigs) == EGL_FALSE) || (numConfigs == 0))
 	{
-		throw winrt::hresult_error(E_FAIL, L"Failed to choose first EGLConfig");
+		//throw winrt::hresult_error(E_FAIL, L"Failed to choose first EGLConfig");
 	}
 
 	mEglContext = eglCreateContext(mEglDisplay, mEglConfig, EGL_NO_CONTEXT, contextAttributes);
 	if (mEglContext == EGL_NO_CONTEXT)
 	{
-		throw winrt::hresult_error(E_FAIL, L"Failed to create EGL context");
+		//throw winrt::hresult_error(E_FAIL, L"Failed to create EGL context");
 	}
 }
 
@@ -157,38 +153,38 @@ void OpenGLES::Reset()
 	Initialize();
 }
 
-EGLSurface OpenGLES::CreateSurface(winrt::Windows::UI::Composition::ISpriteVisual & visual)
-{
-	if (!visual)
-	{
-		throw winrt::hresult_error(E_INVALIDARG, L"SwapChainPanel parameter is invalid");
-	}
-
-	EGLSurface surface = EGL_NO_SURFACE;
-
-	const EGLint surfaceAttributes[] =
-	{
-		// EGL_ANGLE_SURFACE_RENDER_TO_BACK_BUFFER is part of the same optimization as EGL_ANGLE_DISPLAY_ALLOW_RENDER_TO_BACK_BUFFER (see above).
-		// If you have compilation issues with it then please update your Visual Studio templates.
-		//EGL_WINDOWS_UI_COMPOSITION_ANGLE, EGL_TRUE,
-		EGL_NONE
-	};
-
-
-	surface = eglCreateWindowSurface(mEglDisplay, mEglConfig, static_cast<EGLNativeWindowType>(winrt::get_abi(visual)), surfaceAttributes);
-	if (surface == EGL_NO_SURFACE)
-	{
-		throw winrt::hresult_error(E_FAIL, L"Failed to create EGL surface");
-	}
-
-	return surface;
-}
+//EGLSurface OpenGLES::CreateSurface(winrt::Windows::UI::Composition::ISpriteVisual & visual)
+//{
+//	if (!visual)
+//	{
+//		//throw winrt::hresult_error(E_INVALIDARG, L"SwapChainPanel parameter is invalid");
+//	}
+//
+//	EGLSurface surface = EGL_NO_SURFACE;
+//
+//	const EGLint surfaceAttributes[] =
+//	{
+//		// EGL_ANGLE_SURFACE_RENDER_TO_BACK_BUFFER is part of the same optimization as EGL_ANGLE_DISPLAY_ALLOW_RENDER_TO_BACK_BUFFER (see above).
+//		// If you have compilation issues with it then please update your Visual Studio templates.
+//		//EGL_WINDOWS_UI_COMPOSITION_ANGLE, EGL_TRUE,
+//		EGL_NONE
+//	};
+//
+//
+//	surface = eglCreateWindowSurface(mEglDisplay, mEglConfig, static_cast<EGLNativeWindowType>(winrt::get_abi(visual)), surfaceAttributes);
+//	if (surface == EGL_NO_SURFACE)
+//	{
+//		//throw winrt::hresult_error(E_FAIL, L"Failed to create EGL surface");
+//	}
+//
+//	return surface;
+//}
 
 EGLSurface OpenGLES::CreateSurface(
     HWND window) {
   if (!window) {
-    throw winrt::hresult_error(E_INVALIDARG,
-                               L"Window parameter is invalid");
+    //throw winrt::hresult_error(E_INVALIDARG,
+    //                           L"Window parameter is invalid");
   }
 
   EGLSurface surface = EGL_NO_SURFACE;
@@ -206,7 +202,7 @@ EGLSurface OpenGLES::CreateSurface(
       static_cast<EGLNativeWindowType>(window),
       surfaceAttributes);
   if (surface == EGL_NO_SURFACE) {
-    throw winrt::hresult_error(E_FAIL, L"Failed to create EGL surface");
+    //throw winrt::hresult_error(E_FAIL, L"Failed to create EGL surface");
   }
 
   return surface;
@@ -230,7 +226,7 @@ void OpenGLES::MakeCurrent(const EGLSurface surface)
 {
 	if (eglMakeCurrent(mEglDisplay, surface, surface, mEglContext) == EGL_FALSE)
 	{
-		throw winrt::hresult_error(E_FAIL, L"Failed to make EGLSurface current");
+		//throw winrt::hresult_error(E_FAIL, L"Failed to make EGLSurface current");
 	}
 }
 

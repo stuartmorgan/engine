@@ -6,6 +6,12 @@ assert(is_win)
 
 _public_headers = [ "public/flutter_windows.h" ]
 
+_angle_dir = "//third_party/angle"
+
+config("relative_angle_headers") {
+  include_dirs = [ "$_angle_dir/include" ]
+}
+
 # Any files that are built by clients (client_wrapper code, library headers for
 # implementations using this shared code, etc.) include the public headers
 # assuming they are in the include path. This configuration should be added to
@@ -34,12 +40,22 @@ source_set("flutter_windows_headers") {
 
 source_set("flutter_windows_source") {
   sources = [
+    "DesktopWindow.h",
+# "FlutterEngineHost.h",
+    "FlutterWindow.h",
+    "OpenGLES.h",
+# "FlutterEngineHost.cpp",
+    "FlutterWindow.cpp",
+    "OpenGLES.cpp",
+
     "flutter_windows.cc",
   ]
 
   configs += [
     "$flutter_root/shell/platform/common/cpp:desktop_library_implementation",
   ]
+
+  public_configs = [ ":relative_angle_headers" ]
 
   deps = [
     ":flutter_windows_headers",
@@ -48,6 +64,7 @@ source_set("flutter_windows_source") {
     "$flutter_root/shell/platform/embedder:embedder",
     "$flutter_root/shell/platform/windows/client_wrapper:client_wrapper_windows",
     #"//third_party/jsoncpp",
+    #"//third_party/angle:libANGLE",
   ]
 }
 
