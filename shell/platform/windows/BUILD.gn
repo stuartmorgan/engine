@@ -53,6 +53,9 @@ source_set("flutter_windows_source") {
 
   configs += [
     "$flutter_root/shell/platform/common/cpp:desktop_library_implementation",
+    "//third_party/angle:libANGLE_config",
+    "//third_party/angle:angle_static",
+    "//third_party/angle:egl_static",
   ]
 
   public_configs = [ ":relative_angle_headers" ]
@@ -64,7 +67,7 @@ source_set("flutter_windows_source") {
     "$flutter_root/shell/platform/embedder:embedder",
     "$flutter_root/shell/platform/windows/client_wrapper:client_wrapper_windows",
     #"//third_party/jsoncpp",
-    #"//third_party/angle:libANGLE",
+    "//third_party/angle:libGLESv2_static",
   ]
 }
 
