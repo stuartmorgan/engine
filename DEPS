@@ -385,8 +385,13 @@ deps = {
    Var('github_git') + '/KhronosGroup/Vulkan-Docs.git' + '@' + 'v1.1.91',
 
    # Headers for Angle
+   # 'src/third_party/angle':
+   # Var('github_git') + '/google/angle.git' + '@' + 'c467f7b5418856515b9f321495def98ee8ad0554',
+
+   # Temporary hack: pull in hacked version of angle that will build in flutterengine
    'src/third_party/angle':
-   Var('github_git') + '/google/angle.git' + '@' + 'c467f7b5418856515b9f321495def98ee8ad0554',
+   Var('github_git') + '/clarkezone/angle.git' + '@' + 'ed5996ff6be3e9efd0da5ca6cfd49c9a8d887477',
+
 
   'src/third_party/pkg/when':
    Var('dart_git') + '/when.git' + '@' + '0.2.0',
