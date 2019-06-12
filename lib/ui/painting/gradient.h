@@ -9,15 +9,13 @@
 #include "flutter/lib/ui/painting/matrix.h"
 #include "flutter/lib/ui/painting/shader.h"
 #include "third_party/skia/include/effects/SkGradientShader.h"
-#include "third_party/tonic/typed_data/float32_list.h"
-#include "third_party/tonic/typed_data/float64_list.h"
-#include "third_party/tonic/typed_data/int32_list.h"
+#include "third_party/tonic/typed_data/typed_list.h"
 
 namespace tonic {
 class DartLibraryNatives;
 }  // namespace tonic
 
-namespace blink {
+namespace flutter {
 
 // TODO: update this if/when Skia adds Decal mode skbug.com/7638
 static_assert(kSkTileModeCount >= 3, "Need to update tile mode enum");
@@ -33,7 +31,8 @@ class CanvasGradient : public Shader {
   void initLinear(const tonic::Float32List& end_points,
                   const tonic::Int32List& colors,
                   const tonic::Float32List& color_stops,
-                  SkTileMode tile_mode);
+                  SkTileMode tile_mode,
+                  const tonic::Float64List& matrix4);
 
   void initRadial(double center_x,
                   double center_y,
@@ -69,6 +68,6 @@ class CanvasGradient : public Shader {
   CanvasGradient();
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_PAINTING_GRADIENT_H_

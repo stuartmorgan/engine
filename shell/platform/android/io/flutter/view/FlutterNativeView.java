@@ -7,6 +7,7 @@ package io.flutter.view;
 import android.app.Activity;
 import android.content.Context;
 import android.support.annotation.NonNull;
+import android.support.annotation.UiThread;
 import android.util.Log;
 import io.flutter.app.FlutterPluginRegistry;
 import io.flutter.embedding.engine.FlutterJNI;
@@ -14,6 +15,7 @@ import io.flutter.embedding.engine.FlutterEngine.EngineLifecycleListener;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.renderer.FlutterRenderer.RenderSurface;
+import io.flutter.embedding.engine.renderer.OnFirstFrameRenderedListener;
 import io.flutter.plugin.common.*;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -137,11 +139,13 @@ public class FlutterNativeView implements BinaryMessenger {
     }
 
     @Override
+    @UiThread
     public void send(String channel, ByteBuffer message) {
         dartExecutor.send(channel, message);
     }
 
     @Override
+    @UiThread
     public void send(String channel, ByteBuffer message, BinaryReply callback) {
         if (!isAttached()) {
             Log.d(TAG, "FlutterView.send called on a detached view, channel=" + channel);
@@ -152,6 +156,7 @@ public class FlutterNativeView implements BinaryMessenger {
     }
 
     @Override
+    @UiThread
     public void setMessageHandler(String channel, BinaryMessageHandler handler) {
         dartExecutor.setMessageHandler(channel, handler);
     }
@@ -199,6 +204,12 @@ public class FlutterNativeView implements BinaryMessenger {
             }
             mFlutterView.onFirstFrame();
         }
+
+        @Override
+        public void addOnFirstFrameRenderedListener(@NonNull OnFirstFrameRenderedListener listener) {}
+
+        @Override
+        public void removeOnFirstFrameRenderedListener(@NonNull OnFirstFrameRenderedListener listener) {}
     }
 
     private final class EngineLifecycleListenerImpl implements EngineLifecycleListener {

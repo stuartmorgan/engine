@@ -10,7 +10,7 @@
 
 using tonic::ToDart;
 
-namespace blink {
+namespace flutter {
 
 void DartIO::InitForIsolate() {
   Dart_Handle result = Dart_SetNativeResolver(
@@ -21,8 +21,4 @@ void DartIO::InitForIsolate() {
   }
 }
 
-bool DartIO::EntropySource(uint8_t* buffer, intptr_t length) {
-  return dart::bin::GetEntropy(buffer, length);
-}
-
-}  // namespace blink
+}  // namespace flutter

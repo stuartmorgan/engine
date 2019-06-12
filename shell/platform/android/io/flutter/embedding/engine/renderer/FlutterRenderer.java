@@ -10,6 +10,7 @@ import android.graphics.SurfaceTexture;
 import android.os.Build;
 import android.os.Handler;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.view.Surface;
 
 import java.nio.ByteBuffer;
@@ -41,6 +42,14 @@ public class FlutterRenderer implements TextureRegistry {
 
   public FlutterRenderer(@NonNull FlutterJNI flutterJNI) {
     this.flutterJNI = flutterJNI;
+  }
+
+  /**
+   * Returns true if this {@code FlutterRenderer} is attached to the given {@link RenderSurface},
+   * false otherwise.
+   */
+  public boolean isAttachedTo(@NonNull RenderSurface renderSurface) {
+    return this.renderSurface == renderSurface;
   }
 
   public void attachToRenderSurface(@NonNull RenderSurface renderSurface) {
@@ -267,6 +276,18 @@ public class FlutterRenderer implements TextureRegistry {
      * never be called.
      */
     void onFirstFrameRendered();
+
+    /**
+     * Adds the given {@code listener} to this {@code FlutterRenderer}, to be notified upon Flutter's
+     * first rendered frame.
+     */
+    void addOnFirstFrameRenderedListener(@NonNull OnFirstFrameRenderedListener listener);
+
+    /**
+     * Removes the given {@code listener}, which was previously added with
+     * {@link #addOnFirstFrameRenderedListener(OnFirstFrameRenderedListener)}.
+     */
+    void removeOnFirstFrameRenderedListener(@NonNull OnFirstFrameRenderedListener listener);
   }
 
   /**

@@ -7,15 +7,15 @@
 #include <memory>
 #include <string>
 
-#include "flutter/common/version/version.h"
 #include "flutter/fml/base32.h"
 #include "flutter/fml/file.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/paths.h"
 #include "flutter/fml/trace_event.h"
+#include "flutter/shell/version/version.h"
 
-namespace shell {
+namespace flutter {
 
 std::string PersistentCache::cache_base_path_;
 
@@ -59,12 +59,11 @@ PersistentCache::PersistentCache(bool read_only) : is_read_only_(read_only) {
   }
 
   if (cache_base_dir.is_valid()) {
-    cache_directory_ = std::make_shared<fml::UniqueFD>(
-        CreateDirectory(cache_base_dir,
-                        {"flutter_engine", blink::GetFlutterEngineVersion(),
-                         "skia", blink::GetSkiaVersion()},
-                        read_only ? fml::FilePermission::kRead
-                                  : fml::FilePermission::kReadWrite));
+    cache_directory_ = std::make_shared<fml::UniqueFD>(CreateDirectory(
+        cache_base_dir,
+        {"flutter_engine", GetFlutterEngineVersion(), "skia", GetSkiaVersion()},
+        read_only ? fml::FilePermission::kRead
+                  : fml::FilePermission::kReadWrite));
   }
   if (!IsValid()) {
     FML_LOG(WARNING) << "Could not acquire the persistent cache directory. "
@@ -80,7 +79,7 @@ bool PersistentCache::IsValid() const {
 
 // |GrContextOptions::PersistentCache|
 sk_sp<SkData> PersistentCache::load(const SkData& key) {
-  TRACE_EVENT0("flutter", "PersistentCacheLoad");
+  FML_TRACE_EVENT0("flutter", "PersistentCacheLoad");
   if (!IsValid()) {
     return nullptr;
   }
@@ -98,7 +97,7 @@ sk_sp<SkData> PersistentCache::load(const SkData& key) {
     return nullptr;
   }
 
-  TRACE_EVENT0("flutter", "PersistentCacheLoadHit");
+  FML_TRACE_EVENT0("flutter", "PersistentCacheLoadHit");
   return SkData::MakeWithCopy(mapping->GetMapping(), mapping->GetSize());
 }
 
@@ -111,7 +110,7 @@ static void PersistentCacheStore(fml::RefPtr<fml::TaskRunner> worker,
                          file_name = std::move(key),  //
                          mapping = std::move(value)   //
   ]() mutable {
-        TRACE_EVENT0("flutter", "PersistentCacheStore");
+        FML_TRACE_EVENT0("flutter", "PersistentCacheStore");
         if (!fml::WriteAtomically(*cache_directory,   //
                                   file_name.c_str(),  //
                                   *mapping)           //
@@ -205,4 +204,4 @@ fml::RefPtr<fml::TaskRunner> PersistentCache::GetWorkerTaskRunner() const {
   return worker;
 }
 
-}  // namespace shell
+}  // namespace flutter

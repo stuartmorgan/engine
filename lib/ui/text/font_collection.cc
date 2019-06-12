@@ -19,11 +19,11 @@
 #include "third_party/tonic/dart_args.h"
 #include "third_party/tonic/dart_library_natives.h"
 #include "third_party/tonic/logging/dart_invoke.h"
-#include "third_party/tonic/typed_data/uint8_list.h"
+#include "third_party/tonic/typed_data/typed_list.h"
 #include "txt/asset_font_manager.h"
 #include "txt/test_font_manager.h"
 
-namespace blink {
+namespace flutter {
 
 namespace {
 
@@ -161,4 +161,4 @@ void FontCollection::LoadFontFromList(const uint8_t* font_data,
   collection_->ClearFontFamilyCache();
 }
 
-}  // namespace blink
+}  // namespace flutter

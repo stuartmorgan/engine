@@ -12,10 +12,10 @@
 #include "flutter/testing/test_dart_native_resolver.h"
 #include "flutter/testing/thread_test.h"
 
-namespace blink {
+namespace flutter {
 namespace testing {
 
-class RuntimeTest : public ::testing::ThreadTest {
+class RuntimeTest : public ThreadTest {
  public:
   RuntimeTest();
 
@@ -34,12 +34,12 @@ class RuntimeTest : public ::testing::ThreadTest {
 
  private:
   fml::UniqueFD assets_dir_;
-  std::shared_ptr<::testing::TestDartNativeResolver> native_resolver_;
+  std::shared_ptr<TestDartNativeResolver> native_resolver_;
 
   void SetSnapshotsAndAssets(Settings& settings);
 };
 
 }  // namespace testing
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_RUNTIME_RUNTIME_TEST_H_

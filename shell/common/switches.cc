@@ -9,10 +9,11 @@
 #include <sstream>
 #include <string>
 
-#include "flutter/common/version/version.h"
 #include "flutter/fml/native_library.h"
 #include "flutter/fml/paths.h"
+#include "flutter/fml/size.h"
 #include "flutter/fml/string_view.h"
+#include "flutter/shell/version/version.h"
 
 // Include once for the default enum definition.
 #include "flutter/shell/common/switches.h"
@@ -20,7 +21,7 @@
 #undef SHELL_COMMON_SWITCHES_H_
 
 struct SwitchDesc {
-  shell::Switch sw;
+  flutter::Switch sw;
   const fml::StringView flag;
   const char* help;
 };
@@ -32,26 +33,39 @@ struct SwitchDesc {
 // clang-format off
 #define DEF_SWITCHES_START static const struct SwitchDesc gSwitchDescs[] = {
 #define DEF_SWITCH(p_swtch, p_flag, p_help) \
-  { shell::Switch:: p_swtch, p_flag, p_help },
+  { flutter::Switch:: p_swtch, p_flag, p_help },
 #define DEF_SWITCHES_END };
 // clang-format on
+
+#if FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE && \
+    FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_DYNAMIC_RELEASE
+
+// List of common and safe VM flags to allow to be passed directly to the VM.
+// clang-format off
+static const std::string gDartFlagsWhitelist[] = {
+    "--max_profile_depth",
+    "--profile_period",
+    "--random_seed",
+};
+// clang-format on
+
+#endif
 
 // Include again for struct definition.
 #include "flutter/shell/common/switches.h"
 
-namespace shell {
+namespace flutter {
 
 void PrintUsage(const std::string& executable_name) {
   std::cerr << std::endl << "  " << executable_name << std::endl << std::endl;
 
   std::cerr << "Versions: " << std::endl << std::endl;
 
-  std::cerr << "Flutter Engine Version: " << blink::GetFlutterEngineVersion()
+  std::cerr << "Flutter Engine Version: " << GetFlutterEngineVersion()
             << std::endl;
-  std::cerr << "Skia Version: " << blink::GetSkiaVersion() << std::endl;
+  std::cerr << "Skia Version: " << GetSkiaVersion() << std::endl;
 
-  std::cerr << "Dart Version: " << blink::GetDartVersion() << std::endl
-            << std::endl;
+  std::cerr << "Dart Version: " << GetDartVersion() << std::endl << std::endl;
 
   std::cerr << "Available Flags:" << std::endl;
 
@@ -103,13 +117,31 @@ const fml::StringView FlagForSwitch(Switch swtch) {
   return fml::StringView();
 }
 
+#if FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE && \
+    FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_DYNAMIC_RELEASE
+
+static bool IsWhitelistedDartVMFlag(const std::string& flag) {
+  for (uint32_t i = 0; i < fml::size(gDartFlagsWhitelist); ++i) {
+    const std::string& allowed = gDartFlagsWhitelist[i];
+    // Check that the prefix of the flag matches one of the whitelisted flags.
+    // We don't need to worry about cases like "--safe --sneaky_dangerous" as
+    // the VM will discard these as a single unrecognized flag.
+    if (std::equal(allowed.begin(), allowed.end(), flag.begin())) {
+      return true;
+    }
+  }
+  return false;
+}
+
+#endif
+
 template <typename T>
 static bool GetSwitchValue(const fml::CommandLine& command_line,
-                           shell::Switch sw,
+                           Switch sw,
                            T* result) {
   std::string switch_string;
 
-  if (!command_line.GetOptionValue(shell::FlagForSwitch(sw), &switch_string)) {
+  if (!command_line.GetOptionValue(FlagForSwitch(sw), &switch_string)) {
     return false;
   }
 
@@ -150,8 +182,8 @@ std::unique_ptr<fml::Mapping> GetSymbolMapping(std::string symbol_prefix,
   return std::make_unique<fml::NonOwnedMapping>(mapping, size);
 }
 
-blink::Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
-  blink::Settings settings = {};
+Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
+  Settings settings = {};
 
   // Enable Observatory
   settings.enable_observatory =
@@ -166,6 +198,11 @@ blink::Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
           << settings.observatory_port;
     }
   }
+
+  // Disable need for authentication codes for VM service communication, if
+  // specified.
+  settings.disable_service_auth_codes =
+      command_line.HasOption(FlagForSwitch(Switch::DisableServiceAuthCodes));
 
   // Checked mode overrides.
   settings.disable_dart_asserts =
@@ -193,8 +230,6 @@ blink::Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
 
   settings.verbose_logging =
       command_line.HasOption(FlagForSwitch(Switch::VerboseLogging));
-
-  command_line.GetOptionValue(FlagForSwitch(Switch::FLX), &settings.flx_path);
 
   command_line.GetOptionValue(FlagForSwitch(Switch::FlutterAssetsDir),
                               &settings.assets_path);
@@ -258,18 +293,24 @@ blink::Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   settings.use_test_fonts =
       command_line.HasOption(FlagForSwitch(Switch::UseTestFonts));
 
+#if FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE && \
+    FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_DYNAMIC_RELEASE
   command_line.GetOptionValue(FlagForSwitch(Switch::LogTag), &settings.log_tag);
   std::string all_dart_flags;
   if (command_line.GetOptionValue(FlagForSwitch(Switch::DartFlags),
                                   &all_dart_flags)) {
     std::stringstream stream(all_dart_flags);
-    std::istream_iterator<std::string> end;
-    for (std::istream_iterator<std::string> it(stream); it != end; ++it)
-      settings.dart_flags.push_back(*it);
+    std::string flag;
+
+    // Assume that individual flags are comma separated.
+    while (std::getline(stream, flag, ',')) {
+      if (!IsWhitelistedDartVMFlag(flag)) {
+        FML_LOG(FATAL) << "Encountered blacklisted Dart VM flag: " << flag;
+      }
+      settings.dart_flags.push_back(flag);
+    }
   }
 
-#if FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE && \
-    FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_DYNAMIC_RELEASE
   settings.trace_skia =
       command_line.HasOption(FlagForSwitch(Switch::TraceSkia));
   settings.trace_systrace =
@@ -282,4 +323,4 @@ blink::Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   return settings;
 }
 
-}  // namespace shell
+}  // namespace flutter

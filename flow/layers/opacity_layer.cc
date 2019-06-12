@@ -6,9 +6,10 @@
 
 #include "flutter/flow/layers/transform_layer.h"
 
-namespace flow {
+namespace flutter {
 
-OpacityLayer::OpacityLayer() = default;
+OpacityLayer::OpacityLayer(int alpha, const SkPoint& offset)
+    : alpha_(alpha), offset_(offset) {}
 
 OpacityLayer::~OpacityLayer() = default;
 
@@ -19,7 +20,12 @@ void OpacityLayer::EnsureSingleChild() {
     return;
   }
 
-  auto new_child = std::make_shared<flow::TransformLayer>();
+  // Be careful: SkMatrix's default constructor doesn't initialize the matrix to
+  // identity. Hence we have to explicitly call SkMatrix::setIdentity.
+  SkMatrix identity;
+  identity.setIdentity();
+  auto new_child = std::make_shared<flutter::TransformLayer>(identity);
+
   for (auto& child : layers()) {
     new_child->Add(child);
   }
@@ -47,7 +53,7 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 }
 
 void OpacityLayer::Paint(PaintContext& context) const {
-  TRACE_EVENT0("flutter", "OpacityLayer::Paint");
+  FML_TRACE_EVENT0("flutter", "OpacityLayer::Paint");
   FML_DCHECK(needs_painting());
 
   SkPaint paint;
@@ -97,4 +103,4 @@ void OpacityLayer::Paint(PaintContext& context) const {
   PaintChildren(context);
 }
 
-}  // namespace flow
+}  // namespace flutter

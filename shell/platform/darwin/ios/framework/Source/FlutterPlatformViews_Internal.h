@@ -18,7 +18,8 @@
 // 1. Delay or prevent touch events from arriving the embedded view.
 // 2. Dispatching all events that are hittested to the embedded view to the FlutterView.
 @interface FlutterTouchInterceptingView : UIView
-- (instancetype)initWithEmbeddedView:(UIView*)embeddedView flutterView:(UIView*)flutterView;
+- (instancetype)initWithEmbeddedView:(UIView*)embeddedView
+               flutterViewController:(UIViewController*)flutterViewController;
 
 // Stop delaying any active touch sequence (and let it arrive the embedded view).
 - (void)releaseGesture;
@@ -27,7 +28,7 @@
 - (void)blockGesture;
 @end
 
-namespace shell {
+namespace flutter {
 
 class IOSGLContext;
 class IOSSurface;
@@ -52,6 +53,8 @@ class FlutterPlatformViewsController {
 
   void SetFlutterView(UIView* flutter_view);
 
+  void SetFlutterViewController(UIViewController* flutter_view_controller);
+
   void RegisterViewFactory(NSObject<FlutterPlatformViewFactory>* factory, NSString* factoryId);
 
   void SetFrameSize(SkISize frame_size);
@@ -67,7 +70,7 @@ class FlutterPlatformViewsController {
 
   std::vector<SkCanvas*> GetCurrentCanvases();
 
-  SkCanvas* CompositeEmbeddedView(int view_id, const flow::EmbeddedViewParams& params);
+  SkCanvas* CompositeEmbeddedView(int view_id, const flutter::EmbeddedViewParams& params);
 
   // Discards all platform views instances and auxiliary resources.
   void Reset();
@@ -81,9 +84,12 @@ class FlutterPlatformViewsController {
  private:
   fml::scoped_nsobject<FlutterMethodChannel> channel_;
   fml::scoped_nsobject<UIView> flutter_view_;
+  fml::scoped_nsobject<UIViewController> flutter_view_controller_;
   std::map<std::string, fml::scoped_nsobject<NSObject<FlutterPlatformViewFactory>>> factories_;
   std::map<int64_t, fml::scoped_nsobject<NSObject<FlutterPlatformView>>> views_;
   std::map<int64_t, fml::scoped_nsobject<FlutterTouchInterceptingView>> touch_interceptors_;
+  // Mapping a platform view ID to its latest composition params.
+  std::map<int64_t, EmbeddedViewParams> current_composition_params_;
   std::map<int64_t, std::unique_ptr<FlutterPlatformViewLayer>> overlays_;
   // The GrContext that is currently used by all of the overlay surfaces.
   // We track this to know when the GrContext for the Flutter app has changed
@@ -120,6 +126,6 @@ class FlutterPlatformViewsController {
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterPlatformViewsController);
 };
 
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERPLATFORMVIEWS_INTERNAL_H_

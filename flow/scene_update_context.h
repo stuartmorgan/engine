@@ -11,7 +11,6 @@
 
 #include "flutter/flow/compositor_context.h"
 #include "flutter/flow/raster_cache_key.h"
-#include "flutter/fml/build_config.h"
 #include "flutter/fml/compiler_specific.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
@@ -19,11 +18,9 @@
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
-namespace flow {
+namespace flutter {
 
 class Layer;
-class ExportNodeHolder;
-class ExportNode;
 
 class SceneUpdateContext {
  public:
@@ -93,14 +90,6 @@ class SceneUpdateContext {
     std::unique_ptr<scenic::ShapeNode> shape_node_ptr_;
   };
 
-  class Clip : public Entity {
-   public:
-    Clip(SceneUpdateContext& context,
-         scenic::Shape& shape,
-         const SkRect& shape_bounds);
-    ~Clip();
-  };
-
   class Transform : public Entity {
    public:
     Transform(SceneUpdateContext& context, const SkMatrix& transform);
@@ -123,7 +112,9 @@ class SceneUpdateContext {
     Frame(SceneUpdateContext& context,
           const SkRRect& rrect,
           SkColor color,
-          float elevation,
+          float local_elevation = 0.0f,
+          float parent_elevation = 0.0f,
+          float depth = 0.0f,
           Layer* layer = nullptr);
 
     ~Frame();
@@ -139,10 +130,17 @@ class SceneUpdateContext {
     Layer* layer_;
   };
 
+  class Clip : public Entity {
+   public:
+    Clip(SceneUpdateContext& context,
+         scenic::Shape& shape,
+         const SkRect& shape_bounds);
+    ~Clip() = default;
+  };
+
   SceneUpdateContext(scenic::Session* session,
                      SurfaceProducer* surface_producer);
-
-  ~SceneUpdateContext();
+  ~SceneUpdateContext() = default;
 
   scenic::Session* session() { return session_; }
 
@@ -153,18 +151,6 @@ class SceneUpdateContext {
     metrics_ = std::move(metrics);
   }
   const fuchsia::ui::gfx::MetricsPtr& metrics() const { return metrics_; }
-
-  void AddChildScene(ExportNode* export_node,
-                     SkPoint offset,
-                     bool hit_testable);
-
-  // Adds reference to |export_node| so we can call export_node->Dispose() in
-  // our destructor. Caller is responsible for calling RemoveExportNode() before
-  // |export_node| is destroyed.
-  void AddExportNode(ExportNode* export_node);
-
-  // Removes reference to |export_node|.
-  void RemoveExportNode(ExportNode* export_node);
 
   // TODO(chinmaygarde): This method must submit the surfaces as soon as paint
   // tasks are done. However, given that there is no support currently for
@@ -243,12 +229,9 @@ class SceneUpdateContext {
 
   std::vector<PaintTask> paint_tasks_;
 
-  // Save ExportNodes so we can dispose them in our destructor.
-  std::set<ExportNode*> export_nodes_;
-
   FML_DISALLOW_COPY_AND_ASSIGN(SceneUpdateContext);
 };
 
-}  // namespace flow
+}  // namespace flutter
 
 #endif  // FLUTTER_FLOW_SCENE_UPDATE_CONTEXT_H_

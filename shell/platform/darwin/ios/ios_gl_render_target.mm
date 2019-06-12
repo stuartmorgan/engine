@@ -10,7 +10,7 @@
 #include "third_party/skia/include/gpu/GrContextOptions.h"
 #include "third_party/skia/include/gpu/gl/GrGLInterface.h"
 
-namespace shell {
+namespace flutter {
 
 IOSGLRenderTarget::IOSGLRenderTarget(fml::scoped_nsobject<CAEAGLLayer> layer,
                                      EAGLContext* context,
@@ -98,7 +98,7 @@ bool IOSGLRenderTarget::UpdateStorageSizeIfNecessary() {
     // Nothing to since the stoage size is already consistent with the layer.
     return true;
   }
-  TRACE_EVENT_INSTANT0("flutter", "IOSGLRenderTarget::UpdateStorageSizeIfNecessary");
+  FML_TRACE_EVENT_INSTANT0("flutter", "IOSGLRenderTarget::UpdateStorageSizeIfNecessary");
   FML_DLOG(INFO) << "Updating render buffer storage size.";
 
   FML_DCHECK(glGetError() == GL_NO_ERROR);
@@ -138,4 +138,4 @@ bool IOSGLRenderTarget::ResourceMakeCurrent() {
   return [EAGLContext setCurrentContext:resource_context_.get()];
 }
 
-}  // namespace shell
+}  // namespace flutter

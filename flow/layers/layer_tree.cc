@@ -9,7 +9,7 @@
 #include "third_party/skia/include/core/SkPictureRecorder.h"
 #include "third_party/skia/include/utils/SkNWayCanvas.h"
 
-namespace flow {
+namespace flutter {
 
 LayerTree::LayerTree()
     : frame_size_{},
@@ -19,9 +19,14 @@ LayerTree::LayerTree()
 
 LayerTree::~LayerTree() = default;
 
+void LayerTree::RecordBuildTime(fml::TimePoint start) {
+  build_start_ = start;
+  build_finish_ = fml::TimePoint::Now();
+}
+
 void LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
                         bool ignore_raster_cache) {
-  TRACE_EVENT0("flutter", "LayerTree::Preroll");
+  FML_TRACE_EVENT0("flutter", "LayerTree::Preroll");
   SkColorSpace* color_space =
       frame.canvas() ? frame.canvas()->imageInfo().colorSpace() : nullptr;
   frame.context().raster_cache().SetCheckboardCacheImages(
@@ -32,8 +37,8 @@ void LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
       frame.view_embedder(),
       color_space,
       kGiantRect,
-      frame.context().frame_time(),
-      frame.context().engine_time(),
+      frame.context().raster_time(),
+      frame.context().ui_time(),
       frame.context().texture_registry(),
       checkerboard_offscreen_layers_};
 
@@ -43,7 +48,7 @@ void LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
 #if defined(OS_FUCHSIA)
 void LayerTree::UpdateScene(SceneUpdateContext& context,
                             scenic::ContainerNode& container) {
-  TRACE_EVENT0("flutter", "LayerTree::UpdateScene");
+  FML_TRACE_EVENT0("flutter", "LayerTree::UpdateScene");
   const auto& metrics = context.metrics();
   SceneUpdateContext::Transform transform(context,                  // context
                                           1.0f / metrics->scale_x,  // X
@@ -54,7 +59,7 @@ void LayerTree::UpdateScene(SceneUpdateContext& context,
       context,
       SkRRect::MakeRect(
           SkRect::MakeWH(frame_size_.width(), frame_size_.height())),
-      SK_ColorTRANSPARENT, 0.f);
+      SK_ColorTRANSPARENT);
   if (root_layer_->needs_system_composite()) {
     root_layer_->UpdateScene(context);
   }
@@ -67,7 +72,7 @@ void LayerTree::UpdateScene(SceneUpdateContext& context,
 
 void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
                       bool ignore_raster_cache) const {
-  TRACE_EVENT0("flutter", "LayerTree::Paint");
+  FML_TRACE_EVENT0("flutter", "LayerTree::Paint");
   SkISize canvas_size = frame.canvas()->getBaseLayerSize();
   SkNWayCanvas internal_nodes_canvas(canvas_size.width(), canvas_size.height());
   internal_nodes_canvas.addCanvas(frame.canvas());
@@ -81,9 +86,10 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
   Layer::PaintContext context = {
       (SkCanvas*)&internal_nodes_canvas,
       frame.canvas(),
+      frame.gr_context(),
       frame.view_embedder(),
-      frame.context().frame_time(),
-      frame.context().engine_time(),
+      frame.context().raster_time(),
+      frame.context().ui_time(),
       frame.context().texture_registry(),
       ignore_raster_cache ? nullptr : &frame.context().raster_cache(),
       checkerboard_offscreen_layers_};
@@ -93,7 +99,7 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
 }
 
 sk_sp<SkPicture> LayerTree::Flatten(const SkRect& bounds) {
-  TRACE_EVENT0("flutter", "LayerTree::Flatten");
+  FML_TRACE_EVENT0("flutter", "LayerTree::Flatten");
 
   SkPictureRecorder recorder;
   auto* canvas = recorder.beginRecording(bounds);
@@ -128,6 +134,7 @@ sk_sp<SkPicture> LayerTree::Flatten(const SkRect& bounds) {
       (SkCanvas*)&internal_nodes_canvas,
       canvas,  // canvas
       nullptr,
+      nullptr,
       unused_stopwatch,         // frame time (dont care)
       unused_stopwatch,         // engine time (dont care)
       unused_texture_registry,  // texture registry (not supported)
@@ -148,4 +155,4 @@ sk_sp<SkPicture> LayerTree::Flatten(const SkRect& bounds) {
   return recorder.finishRecordingAsPicture();
 }
 
-}  // namespace flow
+}  // namespace flutter

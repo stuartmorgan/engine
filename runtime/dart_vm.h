@@ -22,7 +22,7 @@
 #include "flutter/runtime/service_protocol.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 
-namespace blink {
+namespace flutter {
 
 class DartVM {
  public:
@@ -47,6 +47,7 @@ class DartVM {
   const std::shared_ptr<ServiceProtocol> service_protocol_;
 
   friend class DartVMRef;
+  friend class DartIsolate;
 
   static std::shared_ptr<DartVM> Create(
       Settings settings,
@@ -61,6 +62,6 @@ class DartVM {
   FML_DISALLOW_COPY_AND_ASSIGN(DartVM);
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_RUNTIME_DART_VM_H_

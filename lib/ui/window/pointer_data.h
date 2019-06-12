@@ -7,7 +7,26 @@
 
 #include <stdint.h>
 
-namespace blink {
+namespace flutter {
+
+// Must match the button constants in events.dart.
+enum PointerButtonMouse : int64_t {
+  kPointerButtonMousePrimary = 1 << 0,
+  kPointerButtonMouseSecondary = 1 << 1,
+  kPointerButtonMouseMiddle = 1 << 2,
+  kPointerButtonMouseBack = 1 << 3,
+  kPointerButtonMouseForward = 1 << 4,
+};
+
+enum PointerButtonTouch : int64_t {
+  kPointerButtonTouchContact = 1 << 0,
+};
+
+enum PointerButtonStylus : int64_t {
+  kPointerButtonStylusContact = 1 << 0,
+  kPointerButtonStylusPrimary = 1 << 1,
+  kPointerButtonStylusSecondary = 1 << 2,
+};
 
 // This structure is unpacked by hooks.dart.
 struct alignas(8) PointerData {
@@ -64,6 +83,6 @@ struct alignas(8) PointerData {
   void Clear();
 };
 
-}  // namespace blink
+}  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_WINDOW_POINTER_DATA_H_

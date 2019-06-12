@@ -10,7 +10,7 @@
 
 #include "flutter/fml/trace_event.h"
 
-namespace shell {
+namespace flutter {
 
 template <class T>
 using EGLResult = std::pair<bool, T>;
@@ -235,7 +235,7 @@ bool AndroidContextGL::ClearCurrent() {
 }
 
 bool AndroidContextGL::SwapBuffers() {
-  TRACE_EVENT0("flutter", "AndroidContextGL::SwapBuffers");
+  FML_TRACE_EVENT0("flutter", "AndroidContextGL::SwapBuffers");
   return eglSwapBuffers(environment_->Display(), surface_);
 }
 
@@ -272,4 +272,4 @@ bool AndroidContextGL::Resize(const SkISize& size) {
   return true;
 }
 
-}  // namespace shell
+}  // namespace flutter

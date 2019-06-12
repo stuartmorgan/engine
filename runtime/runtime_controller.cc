@@ -12,7 +12,7 @@
 #include "flutter/runtime/runtime_delegate.h"
 #include "third_party/tonic/dart_message_handler.h"
 
-namespace blink {
+namespace flutter {
 
 RuntimeController::RuntimeController(
     RuntimeDelegate& p_client,
@@ -24,7 +24,9 @@ RuntimeController::RuntimeController(
     fml::WeakPtr<IOManager> p_io_manager,
     std::string p_advisory_script_uri,
     std::string p_advisory_script_entrypoint,
-    std::function<void(int64_t)> p_idle_notification_callback)
+    std::function<void(int64_t)> p_idle_notification_callback,
+    fml::closure p_isolate_create_callback,
+    fml::closure p_isolate_shutdown_callback)
     : RuntimeController(p_client,
                         p_vm,
                         std::move(p_isolate_snapshot),
@@ -35,7 +37,9 @@ RuntimeController::RuntimeController(
                         std::move(p_advisory_script_uri),
                         std::move(p_advisory_script_entrypoint),
                         p_idle_notification_callback,
-                        WindowData{/* default window data */}) {}
+                        WindowData{/* default window data */},
+                        p_isolate_create_callback,
+                        p_isolate_shutdown_callback) {}
 
 RuntimeController::RuntimeController(
     RuntimeDelegate& p_client,
@@ -48,7 +52,9 @@ RuntimeController::RuntimeController(
     std::string p_advisory_script_uri,
     std::string p_advisory_script_entrypoint,
     std::function<void(int64_t)> idle_notification_callback,
-    WindowData p_window_data)
+    WindowData p_window_data,
+    fml::closure p_isolate_create_callback,
+    fml::closure p_isolate_shutdown_callback)
     : client_(p_client),
       vm_(p_vm),
       isolate_snapshot_(std::move(p_isolate_snapshot)),
@@ -60,29 +66,46 @@ RuntimeController::RuntimeController(
       advisory_script_entrypoint_(p_advisory_script_entrypoint),
       idle_notification_callback_(idle_notification_callback),
       window_data_(std::move(p_window_data)),
-      root_isolate_(
-          DartIsolate::CreateRootIsolate(vm_->GetVMData()->GetSettings(),
-                                         isolate_snapshot_,
-                                         shared_snapshot_,
-                                         task_runners_,
-                                         std::make_unique<Window>(this),
-                                         snapshot_delegate_,
-                                         io_manager_,
-                                         p_advisory_script_uri,
-                                         p_advisory_script_entrypoint)) {
-  std::shared_ptr<DartIsolate> root_isolate = root_isolate_.lock();
-  root_isolate->SetReturnCodeCallback([this](uint32_t code) {
+      isolate_create_callback_(p_isolate_create_callback),
+      isolate_shutdown_callback_(p_isolate_shutdown_callback) {
+  // Create the root isolate as soon as the runtime controller is initialized.
+  // It will be run at a later point when the engine provides a run
+  // configuration and then runs the isolate.
+  auto strong_root_isolate =
+      DartIsolate::CreateRootIsolate(vm_->GetVMData()->GetSettings(),  //
+                                     isolate_snapshot_,                //
+                                     shared_snapshot_,                 //
+                                     task_runners_,                    //
+                                     std::make_unique<Window>(this),   //
+                                     snapshot_delegate_,               //
+                                     io_manager_,                      //
+                                     p_advisory_script_uri,            //
+                                     p_advisory_script_entrypoint,     //
+                                     nullptr,                          //
+                                     isolate_create_callback_,         //
+                                     isolate_shutdown_callback_        //
+                                     )
+          .lock();
+
+  FML_CHECK(strong_root_isolate) << "Could not create root isolate.";
+
+  // The root isolate ivar is weak.
+  root_isolate_ = strong_root_isolate;
+
+  strong_root_isolate->SetReturnCodeCallback([this](uint32_t code) {
     root_isolate_return_code_ = {true, code};
   });
+
   if (auto* window = GetWindowIfAvailable()) {
-    tonic::DartState::Scope scope(root_isolate);
+    tonic::DartState::Scope scope(strong_root_isolate);
     window->DidCreateIsolate();
     if (!FlushRuntimeStateToIsolate()) {
-      FML_DLOG(ERROR) << "Could not setup intial isolate state.";
+      FML_DLOG(ERROR) << "Could not setup initial isolate state.";
     }
   } else {
     FML_DCHECK(false) << "RuntimeController created without window binding.";
   }
+
   FML_DCHECK(Dart_CurrentIsolate() == nullptr);
 }
 
@@ -119,7 +142,9 @@ std::unique_ptr<RuntimeController> RuntimeController::Clone() const {
       advisory_script_uri_,         //
       advisory_script_entrypoint_,  //
       idle_notification_callback_,  //
-      window_data_                  //
+      window_data_,                 //
+      isolate_create_callback_,     //
+      isolate_shutdown_callback_    //
       ));
 }
 
@@ -206,6 +231,14 @@ bool RuntimeController::BeginFrame(fml::TimePoint frame_time) {
   return false;
 }
 
+bool RuntimeController::ReportTimings(std::vector<int64_t> timings) {
+  if (auto* window = GetWindowIfAvailable()) {
+    window->ReportTimings(std::move(timings));
+    return true;
+  }
+  return false;
+}
+
 bool RuntimeController::NotifyIdle(int64_t deadline) {
   std::shared_ptr<DartIsolate> root_isolate = root_isolate_.lock();
   if (!root_isolate) {
@@ -218,7 +251,7 @@ bool RuntimeController::NotifyIdle(int64_t deadline) {
 
   // Idle notifications being in isolate scope are part of the contract.
   if (idle_notification_callback_) {
-    TRACE_EVENT0("flutter", "EmbedderIdleNotification");
+    FML_TRACE_EVENT0("flutter", "EmbedderIdleNotification");
     idle_notification_callback_(deadline);
   }
   return true;
@@ -227,8 +260,8 @@ bool RuntimeController::NotifyIdle(int64_t deadline) {
 bool RuntimeController::DispatchPlatformMessage(
     fml::RefPtr<PlatformMessage> message) {
   if (auto* window = GetWindowIfAvailable()) {
-    TRACE_EVENT1("flutter", "RuntimeController::DispatchPlatformMessage",
-                 "mode", "basic");
+    FML_TRACE_EVENT1("flutter", "RuntimeController::DispatchPlatformMessage",
+                     "mode", "basic");
     window->DispatchPlatformMessage(std::move(message));
     return true;
   }
@@ -238,8 +271,8 @@ bool RuntimeController::DispatchPlatformMessage(
 bool RuntimeController::DispatchPointerDataPacket(
     const PointerDataPacket& packet) {
   if (auto* window = GetWindowIfAvailable()) {
-    TRACE_EVENT1("flutter", "RuntimeController::DispatchPointerDataPacket",
-                 "mode", "basic");
+    FML_TRACE_EVENT1("flutter", "RuntimeController::DispatchPointerDataPacket",
+                     "mode", "basic");
     window->DispatchPointerDataPacket(packet);
     return true;
   }
@@ -249,8 +282,8 @@ bool RuntimeController::DispatchPointerDataPacket(
 bool RuntimeController::DispatchSemanticsAction(int32_t id,
                                                 SemanticsAction action,
                                                 std::vector<uint8_t> args) {
-  TRACE_EVENT1("flutter", "RuntimeController::DispatchSemanticsAction", "mode",
-               "basic");
+  FML_TRACE_EVENT1("flutter", "RuntimeController::DispatchSemanticsAction",
+                   "mode", "basic");
   if (auto* window = GetWindowIfAvailable()) {
     window->DispatchSemanticsAction(id, action, std::move(args));
     return true;
@@ -293,6 +326,10 @@ FontCollection& RuntimeController::GetFontCollection() {
 void RuntimeController::UpdateIsolateDescription(const std::string isolate_name,
                                                  int64_t isolate_port) {
   client_.UpdateIsolateDescription(isolate_name, isolate_port);
+}
+
+void RuntimeController::SetNeedsReportTimings(bool value) {
+  client_.SetNeedsReportTimings(value);
 }
 
 Dart_Port RuntimeController::GetMainPort() {
@@ -344,4 +381,4 @@ RuntimeController::WindowData::WindowData(const WindowData& other) = default;
 
 RuntimeController::WindowData::~WindowData() = default;
 
-}  // namespace blink
+}  // namespace flutter

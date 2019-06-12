@@ -4,8 +4,8 @@
 
 #include "gpu_surface_gl.h"
 
-#include "flutter/fml/arraysize.h"
 #include "flutter/fml/logging.h"
+#include "flutter/fml/size.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/persistent_cache.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
@@ -21,7 +21,7 @@
 #define GPU_GL_RGBA4 0x8056
 #define GPU_GL_RGB565 0x8D62
 
-namespace shell {
+namespace flutter {
 
 // Default maximum number of budgeted resources in the cache.
 static const int kGrCacheMaxCount = 8192;
@@ -104,7 +104,7 @@ GPUSurfaceGL::~GPUSurfaceGL() {
   delegate_->GLContextClearCurrent();
 }
 
-// |shell::Surface|
+// |Surface|
 bool GPUSurfaceGL::IsValid() {
   return valid_;
 }
@@ -176,7 +176,7 @@ bool GPUSurfaceGL::CreateOrUpdateSurfaces(const SkISize& size) {
   }
 
   // We need to do some updates.
-  TRACE_EVENT0("flutter", "UpdateSurfacesSize");
+  FML_TRACE_EVENT0("flutter", "UpdateSurfacesSize");
 
   // Either way, we need to get rid of previous surface.
   onscreen_surface_ = nullptr;
@@ -216,12 +216,12 @@ bool GPUSurfaceGL::CreateOrUpdateSurfaces(const SkISize& size) {
   return true;
 }
 
-// |shell::Surface|
+// |Surface|
 SkMatrix GPUSurfaceGL::GetRootTransformation() const {
   return delegate_->GLContextSurfaceTransformation();
 }
 
-// |shell::Surface|
+// |Surface|
 std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(const SkISize& size) {
   if (delegate_ == nullptr) {
     return nullptr;
@@ -259,7 +259,7 @@ bool GPUSurfaceGL::PresentSurface(SkCanvas* canvas) {
   }
 
   if (offscreen_surface_ != nullptr) {
-    TRACE_EVENT0("flutter", "CopyTextureOnscreen");
+    FML_TRACE_EVENT0("flutter", "CopyTextureOnscreen");
     SkPaint paint;
     SkCanvas* onscreen_canvas = onscreen_surface_->getCanvas();
     onscreen_canvas->clear(SK_ColorTRANSPARENT);
@@ -268,7 +268,7 @@ bool GPUSurfaceGL::PresentSurface(SkCanvas* canvas) {
   }
 
   {
-    TRACE_EVENT0("flutter", "SkCanvas::Flush");
+    FML_TRACE_EVENT0("flutter", "SkCanvas::Flush");
     onscreen_surface_->getCanvas()->flush();
   }
 
@@ -314,19 +314,19 @@ sk_sp<SkSurface> GPUSurfaceGL::AcquireRenderSurface(
   return offscreen_surface_ != nullptr ? offscreen_surface_ : onscreen_surface_;
 }
 
-// |shell::Surface|
+// |Surface|
 GrContext* GPUSurfaceGL::GetContext() {
   return context_.get();
 }
 
-// |shell::Surface|
-flow::ExternalViewEmbedder* GPUSurfaceGL::GetExternalViewEmbedder() {
+// |Surface|
+flutter::ExternalViewEmbedder* GPUSurfaceGL::GetExternalViewEmbedder() {
   return delegate_->GetExternalViewEmbedder();
 }
 
-// |shell::Surface|
+// |Surface|
 bool GPUSurfaceGL::MakeRenderContextCurrent() {
   return delegate_->GLContextMakeCurrent();
 }
 
-}  // namespace shell
+}  // namespace flutter

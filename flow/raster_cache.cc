@@ -15,7 +15,7 @@
 #include "third_party/skia/include/core/SkPicture.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
-namespace flow {
+namespace flutter {
 
 RasterCacheResult::RasterCacheResult() {}
 
@@ -98,7 +98,7 @@ static RasterCacheResult Rasterize(
     bool checkerboard,
     const SkRect& logical_rect,
     std::function<void(SkCanvas*)> draw_function) {
-  TRACE_EVENT0("flutter", "RasterCachePopulate");
+  FML_TRACE_EVENT0("flutter", "RasterCachePopulate");
   SkIRect cache_rect = RasterCache::GetDeviceBounds(logical_rect, ctm);
 
   const SkImageInfo image_info = SkImageInfo::MakeN32Premul(
@@ -151,7 +151,7 @@ static inline size_t ClampSize(size_t value, size_t min, size_t max) {
 void RasterCache::Prepare(PrerollContext* context,
                           Layer* layer,
                           const SkMatrix& ctm) {
-  LayerRasterCacheKey cache_key(layer, ctm);
+  LayerRasterCacheKey cache_key(layer->unique_id(), ctm);
   Entry& entry = layer_cache_[cache_key];
   entry.access_count = ClampSize(entry.access_count + 1, 0, access_threshold_);
   entry.used_this_frame = true;
@@ -166,9 +166,10 @@ void RasterCache::Prepare(PrerollContext* context,
                               Layer::PaintContext paintContext = {
                                   (SkCanvas*)&internal_nodes_canvas,
                                   canvas,
+                                  context->gr_context,
                                   nullptr,
-                                  context->frame_time,
-                                  context->engine_time,
+                                  context->raster_time,
+                                  context->ui_time,
                                   context->texture_registry,
                                   context->raster_cache,
                                   context->checkerboard_offscreen_layers};
@@ -229,7 +230,7 @@ RasterCacheResult RasterCache::Get(const SkPicture& picture,
 }
 
 RasterCacheResult RasterCache::Get(Layer* layer, const SkMatrix& ctm) const {
-  LayerRasterCacheKey cache_key(layer, ctm);
+  LayerRasterCacheKey cache_key(layer->unique_id(), ctm);
   auto it = layer_cache_.find(cache_key);
   return it == layer_cache_.end() ? RasterCacheResult() : it->second.image;
 }
@@ -291,4 +292,4 @@ void RasterCache::TraceStatsToTimeline() const {
 #endif  // FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE
 }
 
-}  // namespace flow
+}  // namespace flutter

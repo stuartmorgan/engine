@@ -4,6 +4,10 @@
 
 import("$flutter_root/common/config.gni")
 
+if (is_fuchsia) {
+  import("//build/fuchsia/sdk.gni")
+}
+
 # Whether to build the dartdevc sdk, libraries, and source files
 # required for the flutter web sdk.
 declare_args() {
@@ -22,6 +26,10 @@ group("flutter") {
 
   if (current_toolchain == host_toolchain) {
     public_deps += [ "$flutter_root/shell/testing" ]
+  }
+
+  if (is_fuchsia && using_fuchsia_sdk) {
+    public_deps += [ "$flutter_root/shell/platform/fuchsia" ]
   }
 
   if (!is_fuchsia && !is_fuchsia_host) {
@@ -49,26 +57,29 @@ group("flutter") {
       "$flutter_root/fml:fml_unittests",
       "$flutter_root/runtime:runtime_unittests",
       "$flutter_root/shell/common:shell_unittests",
+      "$flutter_root/shell/platform/common/cpp/client_wrapper:client_wrapper_unittests",
       "$flutter_root/shell/platform/embedder:embedder_unittests",
-      "$flutter_root/synchronization:synchronization_unittests",
+      "$flutter_root/shell/platform/glfw/client_wrapper:client_wrapper_glfw_unittests",
       "$flutter_root/third_party/txt:txt_unittests",
     ]
 
     if (!is_win) {
       public_deps += [ "$flutter_root/shell/common:shell_benchmarks" ]
     }
-
-    if (is_linux) {
-      public_deps += [
-        "$flutter_root/shell/platform/common/cpp/client_wrapper:client_wrapper_unittests",
-        "$flutter_root/shell/platform/glfw/client_wrapper:client_wrapper_glfw_unittests",
-      ]
-    }
   }
 }
 
 config("config") {
   include_dirs = [ ".." ]
+}
+
+config("export_dynamic_symbols") {
+  if (is_linux) {
+    inputs = [
+      "$flutter_root/common/exported_symbols.sym",
+    ]
+    ldflags = [ "-Wl,--dynamic-list=" + rebase_path(inputs[0], root_build_dir) ]
+  }
 }
 
 group("dist") {

@@ -5,6 +5,7 @@
 #include "flutter/flow/flow_test_utils.h"
 #include "flutter/flow/layers/performance_overlay_layer.h"
 #include "flutter/flow/raster_cache.h"
+#include "flutter/fml/build_config.h"
 
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/utils/SkBase64.h"
@@ -28,13 +29,13 @@ const char* kGoldenFileName = "performance_overlay_gold.png";
 const char* kNewGoldenFileName = "performance_overlay_gold_new.png";
 
 TEST(PerformanceOverlayLayer, Gold) {
-  const std::string& golden_dir = flow::GetGoldenDir();
+  const std::string& golden_dir = flutter::GetGoldenDir();
   // This unit test should only be run on Linux (not even on Mac since it's a
   // golden test). Hence we don't have to worry about the "/" vs. "\".
   std::string golden_file_path = golden_dir + "/" + kGoldenFileName;
   std::string new_golden_file_path = golden_dir + "/" + kNewGoldenFileName;
 
-  flow::Stopwatch mock_stopwatch;
+  flutter::Stopwatch mock_stopwatch;
   for (int i = 0; i < size(kMockedTimes); ++i) {
     mock_stopwatch.SetLapTime(
         fml::TimeDelta::FromMilliseconds(kMockedTimes[i]));
@@ -45,19 +46,20 @@ TEST(PerformanceOverlayLayer, Gold) {
 
   ASSERT_TRUE(surface != nullptr);
 
-  flow::TextureRegistry unused_texture_registry;
+  flutter::TextureRegistry unused_texture_registry;
 
-  flow::Layer::PaintContext paintContext = {
-      nullptr,        surface->getCanvas(),    nullptr, mock_stopwatch,
+  flutter::Layer::PaintContext paintContext = {
+      nullptr,        surface->getCanvas(),    nullptr, nullptr, mock_stopwatch,
       mock_stopwatch, unused_texture_registry, nullptr, false};
 
   // Specify font file to ensure the same font across different operation
   // systems.
-  flow::PerformanceOverlayLayer layer(flow::kDisplayRasterizerStatistics |
-                                          flow::kVisualizeRasterizerStatistics |
-                                          flow::kDisplayEngineStatistics |
-                                          flow::kVisualizeEngineStatistics,
-                                      flow::GetFontFile().c_str());
+  flutter::PerformanceOverlayLayer layer(
+      flutter::kDisplayRasterizerStatistics |
+          flutter::kVisualizeRasterizerStatistics |
+          flutter::kDisplayEngineStatistics |
+          flutter::kVisualizeEngineStatistics,
+      flutter::GetFontFile().c_str());
   layer.set_paint_bounds(SkRect::MakeWH(1000, 400));
   surface->getCanvas()->clear(SK_ColorTRANSPARENT);
   layer.Paint(paintContext);
@@ -72,6 +74,9 @@ TEST(PerformanceOverlayLayer, Gold) {
       << "Please either set --golden-dir, or make sure that the unit test is "
       << "run from the right directory (e.g., flutter/engine/src).";
 
+#if !OS_LINUX
+  GTEST_SKIP() << "Skipping golden tests on non-Linux OSes";
+#endif  // OS_LINUX
   const bool golden_data_matches = golden_data->equals(snapshot_data.get());
   if (!golden_data_matches) {
     SkFILEWStream wstream(new_golden_file_path.c_str());

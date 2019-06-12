@@ -13,7 +13,7 @@
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/platform/android/platform_view_android_jni.h"
 
-namespace shell {
+namespace flutter {
 
 namespace {
 
@@ -72,7 +72,7 @@ std::unique_ptr<Surface> AndroidSurfaceSoftware::CreateGPUSurface() {
 
 sk_sp<SkSurface> AndroidSurfaceSoftware::AcquireBackingStore(
     const SkISize& size) {
-  TRACE_EVENT0("flutter", "AndroidSurfaceSoftware::AcquireBackingStore");
+  FML_TRACE_EVENT0("flutter", "AndroidSurfaceSoftware::AcquireBackingStore");
   if (!IsValid()) {
     return nullptr;
   }
@@ -94,7 +94,7 @@ sk_sp<SkSurface> AndroidSurfaceSoftware::AcquireBackingStore(
 
 bool AndroidSurfaceSoftware::PresentBackingStore(
     sk_sp<SkSurface> backing_store) {
-  TRACE_EVENT0("flutter", "AndroidSurfaceSoftware::PresentBackingStore");
+  FML_TRACE_EVENT0("flutter", "AndroidSurfaceSoftware::PresentBackingStore");
   if (!IsValid() || backing_store == nullptr) {
     return false;
   }
@@ -153,4 +153,4 @@ bool AndroidSurfaceSoftware::SetNativeWindow(
   return true;
 }
 
-}  // namespace shell
+}  // namespace flutter

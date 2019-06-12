@@ -13,7 +13,7 @@
 #include "flutter/fml/trace_event.h"
 #include "third_party/skia/include/utils/mac/SkCGUtils.h"
 
-namespace shell {
+namespace flutter {
 
 IOSSurfaceSoftware::IOSSurfaceSoftware(fml::scoped_nsobject<CALayer> layer,
                                        FlutterPlatformViewsController* platform_views_controller)
@@ -53,7 +53,7 @@ std::unique_ptr<Surface> IOSSurfaceSoftware::CreateGPUSurface() {
 }
 
 sk_sp<SkSurface> IOSSurfaceSoftware::AcquireBackingStore(const SkISize& size) {
-  TRACE_EVENT0("flutter", "IOSSurfaceSoftware::AcquireBackingStore");
+  FML_TRACE_EVENT0("flutter", "IOSSurfaceSoftware::AcquireBackingStore");
   if (!IsValid()) {
     return nullptr;
   }
@@ -71,7 +71,7 @@ sk_sp<SkSurface> IOSSurfaceSoftware::AcquireBackingStore(const SkISize& size) {
 }
 
 bool IOSSurfaceSoftware::PresentBackingStore(sk_sp<SkSurface> backing_store) {
-  TRACE_EVENT0("flutter", "IOSSurfaceSoftware::PresentBackingStore");
+  FML_TRACE_EVENT0("flutter", "IOSSurfaceSoftware::PresentBackingStore");
   if (!IsValid() || backing_store == nullptr) {
     return false;
   }
@@ -127,7 +127,7 @@ bool IOSSurfaceSoftware::PresentBackingStore(sk_sp<SkSurface> backing_store) {
   return true;
 }
 
-flow::ExternalViewEmbedder* IOSSurfaceSoftware::GetExternalViewEmbedder() {
+flutter::ExternalViewEmbedder* IOSSurfaceSoftware::GetExternalViewEmbedder() {
   if (IsIosEmbeddedViewsPreviewEnabled()) {
     return this;
   } else {
@@ -154,7 +154,7 @@ std::vector<SkCanvas*> IOSSurfaceSoftware::GetCurrentCanvases() {
 }
 
 SkCanvas* IOSSurfaceSoftware::CompositeEmbeddedView(int view_id,
-                                                    const flow::EmbeddedViewParams& params) {
+                                                    const flutter::EmbeddedViewParams& params) {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
   FML_CHECK(platform_views_controller != nullptr);
   return platform_views_controller->CompositeEmbeddedView(view_id, params);
@@ -168,4 +168,4 @@ bool IOSSurfaceSoftware::SubmitFrame(GrContext* context) {
   return platform_views_controller->SubmitFrame(false, nullptr, nullptr);
 }
 
-}  // namespace shell
+}  // namespace flutter

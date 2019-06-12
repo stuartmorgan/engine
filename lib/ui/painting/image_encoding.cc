@@ -19,13 +19,13 @@
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/tonic/dart_persistent_value.h"
 #include "third_party/tonic/logging/dart_invoke.h"
-#include "third_party/tonic/typed_data/uint8_list.h"
+#include "third_party/tonic/typed_data/typed_list.h"
 
 using tonic::DartInvoke;
 using tonic::DartPersistentValue;
 using tonic::ToDart;
 
-namespace blink {
+namespace flutter {
 namespace {
 
 // This must be kept in sync with the enum in painting.dart
@@ -70,7 +70,7 @@ sk_sp<SkImage> ConvertToRasterImageIfNecessary(sk_sp<SkImage> image,
     return nullptr;
   }
 
-  TRACE_EVENT0("flutter", __FUNCTION__);
+  FML_TRACE_EVENT0("flutter", __FUNCTION__);
 
   // Create a GPU surface with the context and then do a device to host copy of
   // image contents.
@@ -135,7 +135,7 @@ sk_sp<SkData> CopyImageByteData(sk_sp<SkImage> raster_image,
 sk_sp<SkData> EncodeImage(sk_sp<SkImage> p_image,
                           GrContext* context,
                           ImageByteFormat format) {
-  TRACE_EVENT0("flutter", __FUNCTION__);
+  FML_TRACE_EVENT0("flutter", __FUNCTION__);
 
   // Check validity of the image.
   if (p_image == nullptr) {
@@ -231,4 +231,4 @@ Dart_Handle EncodeImage(CanvasImage* canvas_image,
   return Dart_Null();
 }
 
-}  // namespace blink
+}  // namespace flutter

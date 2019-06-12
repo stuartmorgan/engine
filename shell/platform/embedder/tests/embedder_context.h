@@ -16,7 +16,7 @@
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/testing/test_dart_native_resolver.h"
 
-namespace shell {
+namespace flutter {
 namespace testing {
 
 using SemanticsNodeCallback = std::function<void(const FlutterSemanticsNode*)>;
@@ -58,7 +58,7 @@ class EmbedderContext {
   std::unique_ptr<fml::Mapping> isolate_snapshot_data_;
   std::unique_ptr<fml::Mapping> isolate_snapshot_instructions_;
   std::vector<fml::closure> isolate_create_callbacks_;
-  std::shared_ptr<::testing::TestDartNativeResolver> native_resolver_;
+  std::shared_ptr<TestDartNativeResolver> native_resolver_;
   SemanticsNodeCallback update_semantics_node_callback_;
   SemanticsActionCallback update_semantics_custom_action_callback_;
 
@@ -78,6 +78,6 @@ class EmbedderContext {
 };
 
 }  // namespace testing
-}  // namespace shell
+}  // namespace flutter
 
 #endif  // FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_CONTEXT_H_

@@ -6,7 +6,7 @@
 
 #include <string.h>
 
-namespace blink {
+namespace flutter {
 
 constexpr int32_t kMinPlatformViewId = -1;
 
@@ -16,11 +16,11 @@ SemanticsNode::SemanticsNode(const SemanticsNode& other) = default;
 
 SemanticsNode::~SemanticsNode() = default;
 
-bool SemanticsNode::HasAction(SemanticsAction action) {
+bool SemanticsNode::HasAction(SemanticsAction action) const {
   return (actions & static_cast<int32_t>(action)) != 0;
 }
 
-bool SemanticsNode::HasFlag(SemanticsFlags flag) {
+bool SemanticsNode::HasFlag(SemanticsFlags flag) const {
   return (flags & static_cast<int32_t>(flag)) != 0;
 }
 
@@ -28,4 +28,4 @@ bool SemanticsNode::IsPlatformViewNode() const {
   return platformViewId > kMinPlatformViewId;
 }
 
-}  // namespace blink
+}  // namespace flutter
