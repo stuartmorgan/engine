@@ -48,13 +48,13 @@ struct FlutterDesktopWindowState {
   std::unique_ptr<FlutterDesktopPluginRegistrar> plugin_registrar;
 
   // Message dispatch manager for messages from the Flutter engine.
-  std::unique_ptr<shell::IncomingMessageDispatcher> message_dispatcher;
+  std::unique_ptr<flutter::IncomingMessageDispatcher> message_dispatcher;
 
   // The plugin registrar managing internal plugins.
   std::unique_ptr<flutter::PluginRegistrar> internal_plugin_registrar;
 
   //// Handlers for keyboard events from GLFW.
-  //std::vector<std::unique_ptr<shell::KeyboardHookHandler>>
+  //std::vector<std::unique_ptr<flutter::KeyboardHookHandler>>
   //    keyboard_hook_handlers;
 
   // Whether or not to track mouse movements to send kHover events.
@@ -89,7 +89,7 @@ struct FlutterDesktopMessenger {
   FlutterEngine engine;
 
   // The message dispatcher for handling incoming messages.
-  shell::IncomingMessageDispatcher* dispatcher;
+  flutter::IncomingMessageDispatcher* dispatcher;
 };
 
 // Retrieves state bag for the window in question from the GLFWWindow.
@@ -497,7 +497,7 @@ FlutterDesktopWindowRef FlutterDesktopCreateWindow(int initial_width,
 
     std::shared_ptr<FlutterWindow> window = std::make_shared<FlutterWindow>();
   window->FlutterMessageLoop();
-	
+
 	//#ifdef __linux__
 //  gtk_init(0, nullptr);
 //#endif
@@ -527,7 +527,7 @@ FlutterDesktopWindowRef FlutterDesktopCreateWindow(int initial_width,
 //  // that this isn't a tangle of references.
 //  auto messenger = std::make_unique<FlutterDesktopMessenger>();
 //  state->message_dispatcher =
-//      std::make_unique<shell::IncomingMessageDispatcher>(messenger.get());
+//      std::make_unique<flutter::IncomingMessageDispatcher>(messenger.get());
 //  messenger->engine = engine;
 //  messenger->dispatcher = state->message_dispatcher.get();
 //
@@ -541,9 +541,9 @@ FlutterDesktopWindowRef FlutterDesktopCreateWindow(int initial_width,
 //  auto internal_plugin_messenger =
 //      state->internal_plugin_registrar->messenger();
 //  state->keyboard_hook_handlers.push_back(
-//      std::make_unique<shell::KeyEventHandler>(internal_plugin_messenger));
+//      std::make_unique<flutter::KeyEventHandler>(internal_plugin_messenger));
 //  state->keyboard_hook_handlers.push_back(
-//      std::make_unique<shell::TextInputPlugin>(internal_plugin_messenger));
+//      std::make_unique<flutter::TextInputPlugin>(internal_plugin_messenger));
 //
 //  // Trigger an initial size callback to send size information to Flutter.
 //  state->monitor_screen_coordinates_per_inch = GetScreenCoordinatesPerInch();
