@@ -121,7 +121,8 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + '263ee3b119f686591f8bb131bf22f53d384c2be2',
+  #'src': 'https://github.com/flutter/buildroot.git' + '@' + '263ee3b119f686591f8bb131bf22f53d384c2be2',
+  'src': 'https://github.com/stuartmorgan/buildroot.git' + '@' + '23403a848e5b6be47e34e96aa17908ead3af9a74',
 
    # Fuchsia compatibility
    #
@@ -394,14 +395,8 @@ deps = {
    'src/third_party/vulkan':
    Var('github_git') + '/KhronosGroup/Vulkan-Docs.git' + '@' + 'v1.1.91',
 
-   # Headers for Angle
-   # 'src/third_party/angle':
-   # Var('github_git') + '/google/angle.git' + '@' + 'c467f7b5418856515b9f321495def98ee8ad0554',
-
-   # Temporary hack: pull in hacked version of angle that will build in flutterengine
    'src/third_party/angle':
-   Var('github_git') + '/clarkezone/angle.git' + '@' + 'ed5996ff6be3e9efd0da5ca6cfd49c9a8d887477',
-
+   Var('github_git') + '/google/angle.git' + '@' + '2d0a9acb05511a8fdaf0cd27d0da22599516a68b',
 
   'src/third_party/pkg/when':
    Var('dart_git') + '/when.git' + '@' + '0.2.0',
