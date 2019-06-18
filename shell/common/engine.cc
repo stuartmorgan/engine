@@ -33,6 +33,7 @@ static constexpr char kLifecycleChannel[] = "flutter/lifecycle";
 static constexpr char kNavigationChannel[] = "flutter/navigation";
 static constexpr char kLocalizationChannel[] = "flutter/localization";
 static constexpr char kSettingsChannel[] = "flutter/settings";
+static constexpr char kIsolateChannel[] = "flutter/isolate";
 
 Engine::Engine(Delegate& delegate,
                DartVM& vm,
@@ -101,7 +102,7 @@ bool Engine::UpdateAssetManager(
 }
 
 bool Engine::Restart(RunConfiguration configuration) {
-  FML_TRACE_EVENT0("flutter", "Engine::Restart");
+  TRACE_EVENT0("flutter", "Engine::Restart");
   if (!configuration.IsValid()) {
     FML_LOG(ERROR) << "Engine run configuration was invalid.";
     return false;
@@ -145,6 +146,14 @@ Engine::RunStatus Engine::Run(RunConfiguration configuration) {
       isolate->AddIsolateShutdownCallback(
           settings_.root_isolate_shutdown_callback);
     }
+
+    std::string service_id = isolate->GetServiceId();
+    fml::RefPtr<PlatformMessage> service_id_message =
+        fml::MakeRefCounted<flutter::PlatformMessage>(
+            kIsolateChannel,
+            std::vector<uint8_t>(service_id.begin(), service_id.end()),
+            nullptr);
+    HandlePlatformMessage(service_id_message);
   }
 
   return isolate_running ? Engine::RunStatus::Success
@@ -153,7 +162,7 @@ Engine::RunStatus Engine::Run(RunConfiguration configuration) {
 
 Engine::RunStatus Engine::PrepareAndLaunchIsolate(
     RunConfiguration configuration) {
-  FML_TRACE_EVENT0("flutter", "Engine::PrepareAndLaunchIsolate");
+  TRACE_EVENT0("flutter", "Engine::PrepareAndLaunchIsolate");
 
   UpdateAssetManager(configuration.GetAssetManager());
 
@@ -197,18 +206,18 @@ Engine::RunStatus Engine::PrepareAndLaunchIsolate(
 }
 
 void Engine::BeginFrame(fml::TimePoint frame_time) {
-  FML_TRACE_EVENT0("flutter", "Engine::BeginFrame");
+  TRACE_EVENT0("flutter", "Engine::BeginFrame");
   runtime_controller_->BeginFrame(frame_time);
 }
 
 void Engine::ReportTimings(std::vector<int64_t> timings) {
-  FML_TRACE_EVENT0("flutter", "Engine::ReportTimings");
+  TRACE_EVENT0("flutter", "Engine::ReportTimings");
   runtime_controller_->ReportTimings(std::move(timings));
 }
 
 void Engine::NotifyIdle(int64_t deadline) {
-  FML_TRACE_EVENT1("flutter", "Engine::NotifyIdle", "deadline_now_delta",
-                   std::to_string(deadline - Dart_TimelineGetMicros()).c_str());
+  TRACE_EVENT1("flutter", "Engine::NotifyIdle", "deadline_now_delta",
+               std::to_string(deadline - Dart_TimelineGetMicros()).c_str());
   runtime_controller_->NotifyIdle(deadline);
 }
 
@@ -366,8 +375,8 @@ void Engine::HandleSettingsPlatformMessage(PlatformMessage* message) {
 
 void Engine::DispatchPointerDataPacket(const PointerDataPacket& packet,
                                        uint64_t trace_flow_id) {
-  FML_TRACE_EVENT0("flutter", "Engine::DispatchPointerDataPacket");
-  FML_TRACE_FLOW_STEP("flutter", "PointerEvent", trace_flow_id);
+  TRACE_EVENT0("flutter", "Engine::DispatchPointerDataPacket");
+  TRACE_FLOW_STEP("flutter", "PointerEvent", trace_flow_id);
   animator_->EnqueueTraceFlowId(trace_flow_id);
   runtime_controller_->DispatchPointerDataPacket(packet);
 }

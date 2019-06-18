@@ -79,7 +79,7 @@ bool PersistentCache::IsValid() const {
 
 // |GrContextOptions::PersistentCache|
 sk_sp<SkData> PersistentCache::load(const SkData& key) {
-  FML_TRACE_EVENT0("flutter", "PersistentCacheLoad");
+  TRACE_EVENT0("flutter", "PersistentCacheLoad");
   if (!IsValid()) {
     return nullptr;
   }
@@ -97,7 +97,7 @@ sk_sp<SkData> PersistentCache::load(const SkData& key) {
     return nullptr;
   }
 
-  FML_TRACE_EVENT0("flutter", "PersistentCacheLoadHit");
+  TRACE_EVENT0("flutter", "PersistentCacheLoadHit");
   return SkData::MakeWithCopy(mapping->GetMapping(), mapping->GetSize());
 }
 
@@ -110,7 +110,7 @@ static void PersistentCacheStore(fml::RefPtr<fml::TaskRunner> worker,
                          file_name = std::move(key),  //
                          mapping = std::move(value)   //
   ]() mutable {
-        FML_TRACE_EVENT0("flutter", "PersistentCacheStore");
+        TRACE_EVENT0("flutter", "PersistentCacheStore");
         if (!fml::WriteAtomically(*cache_directory,   //
                                   file_name.c_str(),  //
                                   *mapping)           //
@@ -180,13 +180,13 @@ void PersistentCache::DumpSkp(const SkData& data) {
 
 void PersistentCache::AddWorkerTaskRunner(
     fml::RefPtr<fml::TaskRunner> task_runner) {
-  std::lock_guard<std::mutex> lock(worker_task_runners_mutex_);
+  std::scoped_lock lock(worker_task_runners_mutex_);
   worker_task_runners_.insert(task_runner);
 }
 
 void PersistentCache::RemoveWorkerTaskRunner(
     fml::RefPtr<fml::TaskRunner> task_runner) {
-  std::lock_guard<std::mutex> lock(worker_task_runners_mutex_);
+  std::scoped_lock lock(worker_task_runners_mutex_);
   auto found = worker_task_runners_.find(task_runner);
   if (found != worker_task_runners_.end()) {
     worker_task_runners_.erase(found);
@@ -196,7 +196,7 @@ void PersistentCache::RemoveWorkerTaskRunner(
 fml::RefPtr<fml::TaskRunner> PersistentCache::GetWorkerTaskRunner() const {
   fml::RefPtr<fml::TaskRunner> worker;
 
-  std::lock_guard<std::mutex> lock(worker_task_runners_mutex_);
+  std::scoped_lock lock(worker_task_runners_mutex_);
   if (!worker_task_runners_.empty()) {
     worker = *worker_task_runners_.begin();
   }

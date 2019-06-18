@@ -17,7 +17,11 @@ TransformLayer::TransformLayer(const SkMatrix& transform)
   //
   // We have to write this flaky test because there is no reliable way to test
   // whether a variable is initialized or not in C++.
-  FML_CHECK(transform_.isFinite());
+  FML_DCHECK(transform_.isFinite());
+  if (!transform_.isFinite()) {
+    FML_LOG(ERROR) << "TransformLayer is constructed with an invalid matrix.";
+    transform_.setIdentity();
+  }
 }
 
 TransformLayer::~TransformLayer() = default;
@@ -57,7 +61,7 @@ void TransformLayer::UpdateScene(SceneUpdateContext& context) {
 #endif  // defined(OS_FUCHSIA)
 
 void TransformLayer::Paint(PaintContext& context) const {
-  FML_TRACE_EVENT0("flutter", "TransformLayer::Paint");
+  TRACE_EVENT0("flutter", "TransformLayer::Paint");
   FML_DCHECK(needs_painting());
 
   SkAutoCanvasRestore save(context.internal_nodes_canvas, true);

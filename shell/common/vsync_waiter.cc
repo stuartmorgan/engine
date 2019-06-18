@@ -34,16 +34,15 @@ void VsyncWaiter::AsyncWaitForVsync(Callback callback) {
     return;
   }
 
-  FML_TRACE_EVENT0("flutter", "AsyncWaitForVsync");
+  TRACE_EVENT0("flutter", "AsyncWaitForVsync");
 
   {
-    std::lock_guard<std::mutex> lock(callback_mutex_);
+    std::scoped_lock lock(callback_mutex_);
     if (callback_) {
       // The animator may request a frame more than once within a frame
       // interval. Multiple calls to request frame must result in a single
       // callback per frame interval.
-      FML_TRACE_EVENT_INSTANT0("flutter",
-                               "MultipleCallsToVsyncInFrameInterval");
+      TRACE_EVENT_INSTANT0("flutter", "MultipleCallsToVsyncInFrameInterval");
       return;
     }
     callback_ = std::move(callback);
@@ -56,7 +55,7 @@ void VsyncWaiter::FireCallback(fml::TimePoint frame_start_time,
   Callback callback;
 
   {
-    std::lock_guard<std::mutex> lock(callback_mutex_);
+    std::scoped_lock lock(callback_mutex_);
     callback = std::move(callback_);
   }
 
@@ -64,7 +63,7 @@ void VsyncWaiter::FireCallback(fml::TimePoint frame_start_time,
     // This means that the vsync waiter implementation fired a callback for a
     // request we did not make. This is a paranoid check but we still want to
     // make sure we catch misbehaving vsync implementations.
-    FML_TRACE_EVENT_INSTANT0("flutter", "MismatchedFrameCallback");
+    TRACE_EVENT_INSTANT0("flutter", "MismatchedFrameCallback");
     return;
   }
 
@@ -74,9 +73,9 @@ void VsyncWaiter::FireCallback(fml::TimePoint frame_start_time,
   // exist. The trace viewer will ignore traces that have no base event trace.
   // While all our message loops insert a base trace trace
   // (MessageLoop::RunExpiredTasks), embedders may not.
-  FML_TRACE_EVENT0("flutter", "VsyncFireCallback");
+  TRACE_EVENT0("flutter", "VsyncFireCallback");
 
-  FML_TRACE_FLOW_BEGIN("flutter", kVsyncFlowName, flow_identifier);
+  TRACE_FLOW_BEGIN("flutter", kVsyncFlowName, flow_identifier);
 
   task_runners_.GetUITaskRunner()->PostTaskForTime(
       [callback, flow_identifier, frame_start_time, frame_target_time]() {
@@ -86,7 +85,7 @@ void VsyncWaiter::FireCallback(fml::TimePoint frame_start_time,
             "flutter", "VsyncSchedulingOverhead", fml::TimePoint::Now(),
             frame_start_time);
         callback(frame_start_time, frame_target_time);
-        FML_TRACE_FLOW_END("flutter", kVsyncFlowName, flow_identifier);
+        TRACE_FLOW_END("flutter", kVsyncFlowName, flow_identifier);
       },
       frame_start_time);
 }
