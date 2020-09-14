@@ -11,13 +11,85 @@
 namespace flutter {
 
 namespace {
+// Returns the UTF-32 codepoint for the given UTF-16 surrogate pair.
 char32_t CodePointFromSurrogatePair(wchar_t high, wchar_t low) {
   return 0x10000 + ((static_cast<char32_t>(high) & 0x000003FF) << 10) +
          (low & 0x3FF);
 }
+
+HINSTANCE GetEngineModuleHandle() {
+  HMODULE module = nullptr;
+  ::GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+                          GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                      reinterpret_cast<LPCTSTR>(GetEngineModuleHandle),
+                      &module);
+  return module;
+}
+
+constexpr const wchar_t kWindowClassName[] = L"FLUTTER_ENGINE_WIN32_WINDOW";
+
+// The number of Win32Window objects that currently exist.
+static int g_active_window_count = 0;
+
 }  // namespace
 
+// Manages the Win32Window's window class registration.
+class WindowClassRegistrar {
+ public:
+  ~WindowClassRegistrar() = default;
+
+  // Returns the singleton registar instance.
+  static WindowClassRegistrar* GetInstance() {
+    if (!instance_) {
+      instance_ = new WindowClassRegistrar();
+    }
+    return instance_;
+  }
+
+  // Returns the name of the window class, registering the class if it hasn't
+  // previously been registered.
+  const wchar_t* GetWindowClass();
+
+  // Unregisters the window class. Should only be called if there are no
+  // instances of the window.
+  void UnregisterWindowClass();
+
+ private:
+  WindowClassRegistrar() = default;
+
+  static WindowClassRegistrar* instance_;
+
+  bool class_registered_ = false;
+};
+
+WindowClassRegistrar* WindowClassRegistrar::instance_ = nullptr;
+
+const wchar_t* WindowClassRegistrar::GetWindowClass() {
+  if (!class_registered_) {
+    WNDCLASS window_class{};
+    window_class.hCursor = LoadCursor(nullptr, IDC_ARROW);
+    window_class.lpszClassName = kWindowClassName;
+    window_class.style = CS_HREDRAW | CS_VREDRAW;
+    window_class.cbClsExtra = 0;
+    window_class.cbWndExtra = 0;
+    window_class.hInstance = GetEngineModuleHandle();
+    window_class.hIcon = nullptr;
+    window_class.hbrBackground = 0;
+    window_class.lpszMenuName = nullptr;
+    window_class.lpfnWndProc = Win32Window::WndProc;
+    ::RegisterClass(&window_class);
+    class_registered_ = true;
+  }
+  return kWindowClassName;
+}
+
+void WindowClassRegistrar::UnregisterWindowClass() {
+  UnregisterClass(kWindowClassName, nullptr);
+  class_registered_ = false;
+}
+
 Win32Window::Win32Window() {
+  ++g_active_window_count;
   // Get the DPI of the primary monitor as the initial DPI. If Per-Monitor V2 is
   // supported, |current_dpi_| should be updated in the
   // kWmDpiChangedBeforeParent message.
@@ -25,6 +97,7 @@ Win32Window::Win32Window() {
 }
 
 Win32Window::~Win32Window() {
+  --g_active_window_count;
   Destroy();
 }
 
@@ -34,12 +107,13 @@ void Win32Window::InitializeChild(const char* title,
   Destroy();
   std::wstring converted_title = NarrowToWide(title);
 
-  WNDCLASS window_class = RegisterWindowClass(converted_title);
+  const wchar_t* window_class =
+      WindowClassRegistrar::GetInstance()->GetWindowClass();
 
-  auto* result = CreateWindowEx(
-      0, window_class.lpszClassName, converted_title.c_str(),
-      WS_CHILD | WS_VISIBLE, CW_DEFAULT, CW_DEFAULT, width, height,
-      HWND_MESSAGE, nullptr, window_class.hInstance, this);
+  auto* result = CreateWindowEx(0, window_class, converted_title.c_str(),
+                                WS_CHILD | WS_VISIBLE, CW_DEFAULT, CW_DEFAULT,
+                                width, height, HWND_MESSAGE, nullptr,
+                                GetEngineModuleHandle(), this);
 
   if (result == nullptr) {
     auto error = GetLastError();
@@ -60,24 +134,6 @@ std::wstring Win32Window::NarrowToWide(const char* source) {
   std::wstring wideTitle(length, L'#');
   mbstowcs_s(&outlen, &wideTitle[0], length + 1, source, length);
   return wideTitle;
-}
-
-WNDCLASS Win32Window::RegisterWindowClass(std::wstring& title) {
-  window_class_name_ = title;
-
-  WNDCLASS window_class{};
-  window_class.hCursor = LoadCursor(nullptr, IDC_ARROW);
-  window_class.lpszClassName = title.c_str();
-  window_class.style = CS_HREDRAW | CS_VREDRAW;
-  window_class.cbClsExtra = 0;
-  window_class.cbWndExtra = 0;
-  window_class.hInstance = GetModuleHandle(nullptr);
-  window_class.hIcon = nullptr;
-  window_class.hbrBackground = 0;
-  window_class.lpszMenuName = nullptr;
-  window_class.lpfnWndProc = WndProc;
-  RegisterClass(&window_class);
-  return window_class;
 }
 
 LRESULT CALLBACK Win32Window::WndProc(HWND const window,
@@ -299,8 +355,9 @@ void Win32Window::Destroy() {
     DestroyWindow(window_handle_);
     window_handle_ = nullptr;
   }
-
-  UnregisterClass(window_class_name_.c_str(), nullptr);
+  if (g_active_window_count == 0) {
+    WindowClassRegistrar::GetInstance()->UnregisterWindowClass();
+  }
 }
 
 void Win32Window::HandleResize(UINT width, UINT height) {

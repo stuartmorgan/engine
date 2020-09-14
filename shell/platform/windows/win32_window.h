@@ -34,20 +34,6 @@ class Win32Window {
   // Converts a c string to a wide unicode string.
   std::wstring NarrowToWide(const char* source);
 
-  // Registers a window class with default style attributes, cursor and
-  // icon.
-  WNDCLASS RegisterWindowClass(std::wstring& title);
-
-  // OS callback called by message pump.  Handles the WM_NCCREATE message which
-  // is passed when the non-client area is being created and enables automatic
-  // non-client DPI scaling so that the non-client area automatically
-  // responsponds to changes in DPI.  All other messages are handled by
-  // MessageHandler.
-  static LRESULT CALLBACK WndProc(HWND const window,
-                                  UINT const message,
-                                  WPARAM const wparam,
-                                  LPARAM const lparam) noexcept;
-
   // Processes and route salient window messages for mouse handling,
   // size change and DPI.  Delegates handling of these to member overloads that
   // inheriting classes can handle.
@@ -107,6 +93,16 @@ class Win32Window {
   UINT GetCurrentHeight();
 
  private:
+  friend class WindowClassRegistrar;
+
+  // OS callback called by message pump. Handles the WM_NCCREATE message which
+  // is passed when the non-client area is being created; all other messages
+  // are handled by HandleMessage.
+  static LRESULT CALLBACK WndProc(HWND const window,
+                                  UINT const message,
+                                  WPARAM const wparam,
+                                  LPARAM const lparam) noexcept;
+
   // Release OS resources asociated with window.
   void Destroy();
 
