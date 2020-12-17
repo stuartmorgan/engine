@@ -143,14 +143,19 @@ struct KeyboardState {
  * Sends |event| to all responders in additionalKeyResponders and then to the
  * nextResponder if none of the additional responders handled the event.
  */
-- (void)propagateKeyEvent:(NSEvent*)event ofType:(NSString*)type;
+- (void)propagateKeyEvent:(NSEvent*)event ofType:(NSString*)type withSelector:(SEL)selector;
 
 /**
  * Converts |event| to a key event channel message, and sends it to the engine to
  * hand to the framework. Once the framework responds, if the event was not handled,
  * propagates the event to any additional key responders.
+ *
+ * |receivedSelector| should be the selector by which this class originally
+ * received the event.
  */
-- (void)dispatchKeyEvent:(NSEvent*)event ofType:(NSString*)type;
+- (void)dispatchKeyEvent:(NSEvent*)event
+                  ofType:(NSString*)type
+        originalSelector:(SEL)receivedSelector;
 
 /**
  * Initializes the KVO for user settings and passes the initial user settings to the engine.
@@ -497,15 +502,12 @@ static void CommonInit(FlutterViewController* controller) {
   }
 }
 
-- (void)propagateKeyEvent:(NSEvent*)event ofType:(NSString*)type {
+- (void)propagateKeyEvent:(NSEvent*)event ofType:(NSString*)type withSelector:(SEL)selector {
   if ([type isEqual:@"keydown"]) {
     for (FlutterIntermediateKeyResponder* responder in self.additionalKeyResponders) {
       if ([responder handleKeyDown:event]) {
         return;
       }
-    }
-    if ([self.nextResponder respondsToSelector:@selector(keyDown:)]) {
-      [self.nextResponder keyDown:event];
     }
   } else if ([type isEqual:@"keyup"]) {
     for (FlutterIntermediateKeyResponder* responder in self.additionalKeyResponders) {
@@ -513,13 +515,17 @@ static void CommonInit(FlutterViewController* controller) {
         return;
       }
     }
-    if ([self.nextResponder respondsToSelector:@selector(keyUp:)]) {
-      [self.nextResponder keyUp:event];
-    }
+  }
+
+  // If not handled, pass along to the next responder.
+  if ([self.nextResponder respondsToSelector:selector]) {
+    [self.nextResponder performSelector:selector withObject:event];
   }
 }
 
-- (void)dispatchKeyEvent:(NSEvent*)event ofType:(NSString*)type {
+- (void)dispatchKeyEvent:(NSEvent*)event
+                  ofType:(NSString*)type
+        originalSelector:(SEL)receivedSelector {
   if (event.type != NSEventTypeKeyDown && event.type != NSEventTypeKeyUp &&
       event.type != NSEventTypeFlagsChanged) {
     return;
@@ -543,7 +549,7 @@ static void CommonInit(FlutterViewController* controller) {
     }
     // Only re-dispatch the event to other responders if the framework didn't handle it.
     if (![[reply valueForKey:@"handled"] boolValue]) {
-      [weakSelf propagateKeyEvent:event ofType:type];
+      [weakSelf propagateKeyEvent:event ofType:type withSelector:receivedSelector];
     }
   };
   [_keyEventChannel sendMessage:keyMessage reply:replyHandler];
@@ -644,18 +650,18 @@ static void CommonInit(FlutterViewController* controller) {
 }
 
 - (void)keyDown:(NSEvent*)event {
-  [self dispatchKeyEvent:event ofType:@"keydown"];
+  [self dispatchKeyEvent:event ofType:@"keydown" originalSelector:_cmd];
 }
 
 - (void)keyUp:(NSEvent*)event {
-  [self dispatchKeyEvent:event ofType:@"keyup"];
+  [self dispatchKeyEvent:event ofType:@"keyup" originalSelector:_cmd];
 }
 
 - (void)flagsChanged:(NSEvent*)event {
   if (event.modifierFlags < _keyboardState.previously_pressed_flags) {
-    [self keyUp:event];
+    [self dispatchKeyEvent:event ofType:@"keydown" originalSelector:_cmd];
   } else {
-    [self keyDown:event];
+    [self dispatchKeyEvent:event ofType:@"keyup" originalSelector:_cmd];
   }
   _keyboardState.previously_pressed_flags = event.modifierFlags;
 }
